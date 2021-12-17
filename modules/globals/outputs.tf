@@ -15,11 +15,6 @@ output "azure_cdn_service_address_range" {
   description = "Specifies the address range of the Azure CDN service."
 }
 
-output "crowe_public_ip" {
-  value       = local.crowe_public_ip
-  description = "Specifies the public IP address of the Crowe organization."
-}
-
 output "environment_name_max_length" {
     value = local.environment_name_max_length
     description = "Defines the maximum short name length for the environment identifier."
