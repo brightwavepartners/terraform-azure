@@ -1,12 +1,12 @@
 # global naming conventions, resources, and other enterprise standards items
-# # module "globals" {
-# #   source = "github.com/brightwavepartners/terraform-azure/modules/globals"
+module "globals" {
+  source = "github.com/brightwavepartners/terraform-azure/modules/globals"
 
-# #   application = var.application
-# #   environment = var.environment
-# #   location    = var.location
-# #   tenant      = var.tenant
-# # }
+  application = var.application
+  environment = var.environment
+  location    = var.location
+  tenant      = var.tenant
+}
 
 # # # resource group
 # # resource "azurerm_resource_group" "resource_group" {
