@@ -1,6 +1,6 @@
 # global naming conventions, resources, and other enterprise standards items
 module "globals" {
-  source = "github.com/brightwavepartners/terraform-azure/tree/main/modules/globals"
+  source = "github.com/brightwavepartners/terraform-azure/modules/globals"
 
   application = var.application
   environment = var.environment
