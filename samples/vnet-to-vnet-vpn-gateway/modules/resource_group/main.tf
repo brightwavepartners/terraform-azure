@@ -23,15 +23,15 @@ module "resource_group" {
 
 # virtual network
 resource "azurerm_virtual_network" "virtual_network" {
-  address_space       = ["10.0.0.0/16"]
-  location            = var.location
+  address_space       = var.address_space
+  location            = module.resource_group.location
   resource_group_name = module.resource_group.name
   name                = lower("${module.globals.resource_base_name_long}-${module.globals.role_names.network}-${module.globals.object_type_names.virtual_network}")
 }
 
 # virtual network gateway subnet
-resource "azurerm_subnet" "virtual_network_gateway_subnet" {
-  address_prefixes     = ["10.0.255.0/27"]
+resource "azurerm_subnet" "gateway_subnet" {
+  address_prefixes     = var.gateway_address_prefixes
   name                 = "GatewaySubnet"
   resource_group_name  = module.resource_group.name
   virtual_network_name = azurerm_virtual_network.virtual_network.name
@@ -40,23 +40,23 @@ resource "azurerm_subnet" "virtual_network_gateway_subnet" {
 # public ip address for the virtual network gateway
 resource "azurerm_public_ip" "public_ip" {
   allocation_method   = "Dynamic"
-  location            = var.location
-  name                = lower("${module.globals.resource_base_name_long}-vnetgateway-ip")
+  location            = module.resource_group.location
+  name                = lower("${module.globals.resource_base_name_long}-vnetgateway-ip") # TODO: do not hard-code the role and object type names
   resource_group_name = module.resource_group.name
 }
 
 # virtual network gateway
 resource "azurerm_virtual_network_gateway" "virtual_network_gateway" {
-  location            = var.location
+  location            = module.resource_group.location
   name                = lower("${module.globals.resource_base_name_long}-${module.globals.role_names.network}-vng")
   resource_group_name = module.resource_group.name
-  sku                 = "VpnGw2"
+  sku                 = "VpnGw1"
   type                = "Vpn"
 
   ip_configuration {
     name                          = "vnetGatewayConfig"
     public_ip_address_id          = azurerm_public_ip.public_ip.id
     private_ip_address_allocation = "Dynamic"
-    subnet_id                     = azurerm_subnet.virtual_network_gateway_subnet.id
+    subnet_id                     = azurerm_subnet.gateway_subnet.id
   }
 }
