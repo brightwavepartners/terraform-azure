@@ -138,6 +138,7 @@ locals {
     "api"                 = "api"
     "cache"               = "cache"
     "cdn"                 = "cdn"
+    "connection"          = "conn"
     "data"                = "data"
     "firewall"            = "firewall"
     "identity_and_access" = "iaa"

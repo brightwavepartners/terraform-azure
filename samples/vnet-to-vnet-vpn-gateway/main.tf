@@ -1,45 +1,44 @@
-module "resource_group_one" {
-    source = "./modules/resource_group"
+module "northcentralus" {
+    source = "./modules/region"
 
     address_space = ["10.0.0.0/16"]
     application = local.application
     environment = local.environment
     gateway_address_prefixes = ["10.0.255.0/27"]
     location = "northcentralus"
-    tenant = "tenant"
+    peer_virtual_network_gateway_id = module.southcentralus.virtual_network_gateway.id
+    tenant = local.tenant
+    vpn_gateway_shared_key = local.vpn_gateway_shared_key
 }
 
-module "resource_group_two" {
-    source = "./modules/resource_group"
+module "southcentralus" {
+    source = "./modules/region"
 
     address_space = ["172.16.0.0/12"]
     application = local.application
     environment = local.environment    
     gateway_address_prefixes = ["172.16.255.0/27"]
     location = "southcentralus"
-    tenant = "tenant"   
+    peer_virtual_network_gateway_id = module.northcentralus.virtual_network_gateway.id
+    tenant = local.tenant
+    vpn_gateway_shared_key = local.vpn_gateway_shared_key
 }
 
-resource "azurerm_virtual_network_gateway_connection" "resourcegroupone_to_resourcegrouptwo" {
-  name                = "resourcegroupone-to-resourcegrouptwo"
-  location            = module.resource_group_one.location
-  resource_group_name = module.resource_group_one.name
+# most of the infrastructure and networking components for each region
+# are created in the region module, but the virtual network gateway connections
+# between the two regions can't be part of the region module because that would create
+# a circular dependency between the two region modules. therefore, the connections
+# are created here after both region modules are already created.
 
-  type                            = "Vnet2Vnet"
-  virtual_network_gateway_id      = module.resource_group_one.virtual_network_gateway.id
-  peer_virtual_network_gateway_id = module.resource_group_two.virtual_network_gateway.id
 
-  shared_key = "4v3ry53cr371p53c5h4r3dk3y"
-}
+# # resource "azurerm_virtual_network_gateway_connection" "southcentralus_to_northcentralus" {
+# #   name                = lower("${module.globals.resource_base_name_long}-${module.globals.role_names.network}-${module.globals.object_type_names.virtual_network}")
+# #   location            = module.southcentralus.location
+# #   resource_group_name = module.southcentralus.resource_group_name
 
-resource "azurerm_virtual_network_gateway_connection" "resourcegrouptwo_to_resourcegroupone" {
-  name                = "resourcegrouptwo-to-resourcegroupone"
-  location            = module.resource_group_two.location
-  resource_group_name = module.resource_group_two.name
+# #   type                            = "Vnet2Vnet"
+# #   virtual_network_gateway_id      = module.southcentralus.virtual_network_gateway.id
+# #   peer_virtual_network_gateway_id = module.northcentralus.virtual_network_gateway.id
 
-  type                            = "Vnet2Vnet"
-  virtual_network_gateway_id      = module.resource_group_two.virtual_network_gateway.id
-  peer_virtual_network_gateway_id = module.resource_group_one.virtual_network_gateway.id
-
-  shared_key = "4v3ry53cr371p53c5h4r3dk3y"
-}
+# #   shared_key = local.vpn_gateway_shared_key
+# # }

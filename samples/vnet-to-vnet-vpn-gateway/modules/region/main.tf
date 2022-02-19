@@ -60,3 +60,15 @@ resource "azurerm_virtual_network_gateway" "virtual_network_gateway" {
     subnet_id                     = azurerm_subnet.gateway_subnet.id
   }
 }
+
+resource "azurerm_virtual_network_gateway_connection" "northcentralus_to_southcentralus" {
+  name                = lower("${module.globals.resource_base_name_long}-${module.globals.role_names.network}-${module.globals.object_type_names.virtual_network}")
+  location            = module.resource_group.location
+  resource_group_name = module.resource_group.name
+
+  type                            = "Vnet2Vnet"
+  virtual_network_gateway_id      = azurerm_virtual_network_gateway.virtual_network_gateway.id
+  peer_virtual_network_gateway_id = var.peer_virtual_network_gateway_id
+
+  shared_key = var.vpn_gateway_shared_key
+}
