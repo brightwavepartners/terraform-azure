@@ -1,2 +1,0 @@
-# Overview
-It happens quite often that a resource group is created, and then role assignments are immediately applied to that resource group. This module addresses both by allowing role information to be passed to the module. The resource group will be created and role assignments will be applied in accordance with the role information passed to the module.
