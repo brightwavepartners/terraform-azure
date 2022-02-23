@@ -1,5 +1,6 @@
 variable "allowed_ips" {
   type        = list(string)
+  default     = []
   description = "The Key Vault is integrated into a virtual network. This is the list of IP addresses that are outside the virtual network that will be allowed to access the Key Vault."
 }
 
@@ -26,6 +27,7 @@ variable "location" {
 
 variable "log_analytics_workspace_id" {
   type        = string
+  default     = null
   description = "The unique identifier for a Log Analytics Workspace where Key Vault diagnostics logs will be sent."
 }
 
@@ -47,7 +49,7 @@ variable "sku" {
 
 variable "subnet_ids" {
   type        = list(string)
-  default     = []
+  default     = null
   description = "The list of subnet identifiers to add to the selected network list."
 }
 

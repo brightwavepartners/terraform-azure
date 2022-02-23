@@ -1,0 +1,86 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "administratorPassword": {
+            "type": "String"
+        },
+        "administratorUsername": {
+            "type": "String"
+        },
+        "collation": {
+            "type": "String"
+        },
+        "dnsZonePartner": {
+            "type": "String"
+        },
+        "licenseType": {
+            "type": "String"
+        },
+        "name": {
+            "type": "String"
+        },
+        "location": {
+            "type": "String"
+        },
+        "publicDataEndpointEnabled": {
+            "type": "Bool"
+        },
+        "skuCapacity": {
+            "type": "Int"
+        },
+        "skuFamily": {
+            "type": "String"
+        },
+        "skuName": {
+            "type": "String"
+        },
+        "skuTier": {
+            "type": "String"
+        },
+        "storageSize": {
+            "type": "Int"
+        },
+        "subnetId": {
+            "type": "String"
+        },
+        "timezoneId": {
+            "type": "String"
+        },
+        "vcores": {
+            "type": "Int"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "apiVersion": "2015-05-01-preview",
+            "location": "[parameters('location')]",
+            "name": "[parameters('name')]",
+            "tags": {},
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "type": "Microsoft.Sql/managedInstances",
+            "sku": {
+                "capacity": "[int(parameters('skuCapacity'))]",
+                "family": "[parameters('skuFamily')]",
+                "name": "[parameters('skuName')]",
+                "tier": "[parameters('skuTier')]"
+            },
+            "properties": {
+                "administratorLogin": "[parameters('administratorUsername')]",
+                "administratorLoginPassword": "[parameters('administratorPassword')]",
+                "collation": "[parameters('collation')]",
+                "dnsZonePartner": "[parameters('dnsZonePartner')]",
+                "licenseType": "[parameters('licenseType')]",
+                "publicDataEndpointEnabled": "[bool(parameters('publicDataEndpointEnabled'))]",
+                "storageSizeInGB": "[int(parameters('storageSize'))]",
+                "subnetId": "[parameters('subnetId')]",
+                "timezoneId": "[parameters('timezoneId')]",
+                "vCores": "[int(parameters('vcores'))]"
+            }
+        }
+    ],
+    "outputs": {}
+}
