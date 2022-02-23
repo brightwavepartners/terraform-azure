@@ -1,0 +1,259 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "compressionEnabled": {
+            "type": "Bool"
+        },
+        "contentTypesToCompress": {
+            "type": "Array"
+        },
+        "httpAllowed": {
+            "type": "Bool"
+        },
+        "httpsAllowed": {
+            "type": "Bool"
+        },
+        "location": {
+            "type": "String"
+        },
+        "name": {
+            "type": "String"
+        },
+        "originConfiguration": {
+            "type": "Object"
+        },
+        "profileName": {
+            "type": "String"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.Cdn/profiles/endpoints",
+            "apiVersion": "2020-09-01",
+            "name": "[concat(parameters('profileName'), '/', parameters('name'))]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "origins": [
+                    {
+                        "name": "[parameters('originConfiguration').originGroups[0].origins[0].name]",
+                        "properties": {
+                            "hostName": "[parameters('originConfiguration').originGroups[0].origins[0].host_name]",
+                            "originHostHeader": "[parameters('originConfiguration').originGroups[0].origins[0].host_name]"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Cdn/profiles/endpoints/originGroups",
+            "apiVersion": "2020-09-01",
+            "name": "[concat(parameters('profileName'), '/', parameters('name'), '/', parameters('originConfiguration').originGroups[0].name)]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Cdn/profiles/endpoints', parameters('profileName'), parameters('name'))]"
+            ],
+            "properties": {
+                "healthProbeSettings": {
+                    "probePath": "/",
+                    "probeRequestType": "HEAD",
+                    "probeProtocol": "Http",
+                    "probeIntervalInSeconds": 240
+                },
+                "origins": [
+                    {
+                        "id": "[resourceId('Microsoft.Cdn/profiles/endpoints/origins', parameters('profileName'), parameters('name'), parameters('originConfiguration').originGroups[0].origins[0].name)]"
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2015-01-01",
+            "type": "Microsoft.Resources/deployments",
+            "name": "updateEndpoint",
+            "dependsOn": [
+                "[resourceId('Microsoft.Cdn/profiles/endpoints', parameters('profileName'), parameters('name'))]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "parameters": {},
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {},
+                    "variables": {},
+                    "resources": [
+                        {
+                            "type": "Microsoft.Cdn/profiles/endpoints",
+                            "apiVersion": "2020-09-01",
+                            "name": "[concat(parameters('profileName'), '/', parameters('name'))]",
+                            "location": "[parameters('location')]",
+                            "properties": {
+                                "contentTypesToCompress": "[parameters('contentTypesToCompress')]",
+                                "deliveryPolicy": {
+                                    "rules": [
+                                        {
+                                            "name": "Global",
+                                            "order": 0,
+                                            "conditions": [],
+                                            "actions": [
+                                                {
+                                                    "name": "CacheExpiration",
+                                                    "parameters": {
+                                                        "cacheBehavior": "SetIfMissing",
+                                                        "cacheType": "All",
+                                                        "cacheDuration": "2.00:00:00",
+                                                        "@odata.type": "#Microsoft.Azure.Cdn.Models.DeliveryRuleCacheExpirationActionParameters"
+                                                    }
+                                                },
+                                                {
+                                                    "name": "ModifyResponseHeader",
+                                                    "parameters": {
+                                                        "headerAction": "Overwrite",
+                                                        "headerName": "Cache-Control",
+                                                        "value": "max-age=172800",
+                                                        "@odata.type": "#Microsoft.Azure.Cdn.Models.DeliveryRuleHeaderActionParameters"
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "CORS",
+                                            "order": 1,
+                                            "conditions": [
+                                                {
+                                                    "name": "RequestHeader",
+                                                    "parameters": {
+                                                        "operator": "Equal",
+                                                        "selector": "Origin",
+                                                        "negateCondition": false,
+                                                        "matchValues": [
+                                                            "https://origin.com"
+                                                        ],
+                                                        "transforms": [],
+                                                        "@odata.type": "#Microsoft.Azure.Cdn.Models.DeliveryRuleRequestHeaderConditionParameters"
+                                                    }
+                                                }
+                                            ],
+                                            "actions": [
+                                                {
+                                                    "name": "ModifyResponseHeader",
+                                                    "parameters": {
+                                                        "headerAction": "Overwrite",
+                                                        "headerName": "Access-Control-Allow-Origin",
+                                                        "value": "https://origin.com",
+                                                        "@odata.type": "#Microsoft.Azure.Cdn.Models.DeliveryRuleHeaderActionParameters"
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                "isCompressionEnabled": "[parameters('compressionEnabled')]",
+                                "isHttpAllowed": "[parameters('httpAllowed')]",
+                                "isHttpsAllowed": "[parameters('httpsAllowed')]",
+                                "queryStringCachingBehavior": "IgnoreQueryString",
+                                "origins": [
+                                    {
+                                        "name": "[parameters('originConfiguration').originGroups[0].origins[0].name]",
+                                        "properties": {
+                                            "hostName": "[parameters('originConfiguration').originGroups[0].origins[0].host_name]",
+                                            "originHostHeader": "[parameters('originConfiguration').originGroups[0].origins[0].host_name]"
+                                        }
+                                    }
+                                ],
+                                "originGroups": [
+                                    {
+                                        "name": "[parameters('originConfiguration').originGroups[0].name]",
+                                        "properties": {
+                                            "healthProbeSettings": {
+                                                "probePath": "/",
+                                                "probeRequestType": "HEAD",
+                                                "probeProtocol": "Http",
+                                                "probeIntervalInSeconds": 240
+                                            },
+                                            "origins": [
+                                                {
+                                                    "id": "[resourceId('Microsoft.Cdn/profiles/endpoints/origins', parameters('profileName'), parameters('name'), parameters('originConfiguration').originGroups[0].origins[0].name)]"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ],
+                                "defaultOriginGroup": {
+                                    "id": "[resourceId('Microsoft.Cdn/profiles/endpoints/origingroups', parameters('profileName'), parameters('name'), parameters('originConfiguration').originGroups[0].name)]"
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Cdn/profiles/endpoints/origins",
+            "apiVersion": "2020-09-01",
+            "name": "[concat(parameters('profileName'), '/', parameters('name'), '/', parameters('originConfiguration').originGroups[0].origins[add(copyIndex('origins'), 1)].name)]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', 'updateEndpoint')]"
+            ],
+            "copy": {
+                "name": "origins",
+                "count": "[sub(length(parameters('originConfiguration').originGroups[0].origins), 1)]"
+            },
+            "properties": {
+                "hostName": "[parameters('originConfiguration').originGroups[0].origins[add(copyIndex('origins'), 1)].host_name]",
+                "httpPort": 80,
+                "httpsPort": 443,
+                "originHostHeader": "[parameters('originConfiguration').originGroups[0].origins[add(copyIndex('origins'), 1)].host_name]",
+                "priority": 1,
+                "weight": 1000,
+                "enabled": true
+            }
+        },
+        {
+            "apiVersion": "2015-01-01",
+            "type": "Microsoft.Resources/deployments",
+            "name": "updateOriginGroup",
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', 'updateEndpoint')]",
+                "[resourceId('Microsoft.Cdn/profiles/endpoints/originGroups', parameters('profileName'), parameters('name'), parameters('originConfiguration').originGroups[0].name)]",
+                "origins"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "parameters": {},
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {},
+                    "variables": {},
+                    "resources": [
+                        {
+                            "type": "Microsoft.Cdn/profiles/endpoints/originGroups",
+                            "apiVersion": "2020-09-01",
+                            "name": "[concat(parameters('profileName'), '/', parameters('name'), '/', parameters('originConfiguration').originGroups[0].name)]",
+                            "location": "[parameters('location')]",
+                            "properties": {
+                                "healthProbeSettings": {
+                                    "probePath": "/",
+                                    "probeRequestType": "HEAD",
+                                    "probeProtocol": "Http",
+                                    "probeIntervalInSeconds": 240
+                                },
+                                "copy": [
+                                    {
+                                        "name": "origins",
+                                        "count": "[length(parameters('originConfiguration').originGroups[0].origins)]",
+                                        "input": {
+                                            "id": "[resourceId('Microsoft.Cdn/profiles/endpoints/origins', parameters('profileName'), parameters('name'), parameters('originConfiguration').originGroups[0].origins[copyIndex('origins')].name)]"
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}

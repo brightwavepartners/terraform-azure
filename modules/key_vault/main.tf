@@ -19,7 +19,6 @@ resource "azurerm_key_vault" "keyvault" {
   sku_name                    = var.sku
   tags                        = var.tags
 
-  # TODO: this technique needs to be in the documentation because we are using it in multiple places in the code
   # we are using a technique here with a dynamic block to have this module support both vnet
   # integrated and non-vnet integrated storage accounts. the dynamic block will be triggered
   # if the subnet_ids variable passed in is not null. if it is not, the storage account will
