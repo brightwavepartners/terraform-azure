@@ -1,0 +1,14 @@
+# https://github.com/Azure/azure-cli/issues/19591
+
+# https://hub.docker.com/r/hashicorp/terraform
+FROM docker.io/hashicorp/terraform:1.2.6
+
+ARG AZURE_CLI_VERSION=2.38.0
+ARG OS=arm64
+ARG TFLINT_VERSION=0.39.2
+
+RUN apk update \
+    && apk upgrade \
+    && apk --no-cache add curl
+
+RUN mkdir -p /tmp/docker-downloads

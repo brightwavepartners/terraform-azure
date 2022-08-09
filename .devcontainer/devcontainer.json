@@ -1,0 +1,6 @@
+{
+    "name": "terraform-azure-cli",
+    "build": {
+        "dockerfile": "terraform-azure-cli"
+    }
+}
