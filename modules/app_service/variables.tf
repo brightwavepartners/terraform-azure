@@ -1,5 +1,50 @@
+variable "alert_settings" {
+  type = list(
+    object(
+      {
+        action = object(
+          {
+            action_group_id = string
+          }
+        )
+        description = string
+        dynamic_criteria = optional(
+          object(
+            {
+              aggregation              = string
+              alert_sensitivity        = string
+              evaluation_failure_count = optional(number)
+              evaluation_total_count   = optional(number)
+              metric_name              = string
+              operator                 = string
+            }
+          )
+        )
+        enabled   = bool
+        frequency = optional(string)
+        name      = string
+        severity  = number
+        static_criteria = optional(
+          object(
+            {
+              aggregation = string
+              metric_name = string
+              operator    = string
+              threshold   = number
+            }
+          )
+        )
+        window_size = optional(string)
+      }
+    )
+  )
+  default     = []
+  description = "Defines alert settings for the Function App."
+}
+
 variable "always_on" {
   type        = bool
+  default     = false
   description = "Should the App Service stay loaded all the time?"
 }
 
@@ -10,6 +55,7 @@ variable "app_service_plan_id" {
 
 variable "app_settings" {
   type        = map(string)
+  default     = {}
   description = "Global configuration options for the App Service. These are the Application settings found under the Configuration menu of the App Service."
 }
 
@@ -25,12 +71,69 @@ variable "cors_settings" {
       support_credentials = bool
     }
   )
+  default = null
   description = "Defines settings for origins that should be able to make cross-origin calls."
 }
 
+variable "diagnostics_settings" {
+  type = list(
+    object(
+      {
+        name = string
+        destination = object(
+          {
+            log_analytics_workspace = optional(
+              object(
+                {
+                  destination_type = optional(string)
+                  id               = string
+                }
+              )
+            )
+          }
+        )
+        logs = optional(
+          list(
+            object(
+              {
+                category = string
+                enabled  = bool
+                retention = object(
+                  {
+                    days    = number
+                    enabled = bool
+                  }
+                )
+              }
+            )
+          )
+        )
+        metrics = optional(
+          list(
+            object(
+              {
+                category = string
+                enabled  = bool
+                retention = object(
+                  {
+                    days    = number
+                    enabled = bool
+                  }
+                )
+              }
+            )
+          )
+        )
+      }
+    )
+  )
+  default     = []
+  description = "Defines the configuration for diagnostics settings on the App Service"
+}
+
 variable "dotnet_framework_version" {
-  type = string
-  default = "v4.0"
+  type        = string
+  default     = "v4.0"
   description = "The version of the .net framework's CLR used in this App Service."
 }
 
@@ -119,6 +222,7 @@ variable "use_32_bit_worker_process" {
 # bool value that is known before apply.
 variable "vnet_integration_enabled" {
   type        = bool
+  default     = false
   description = "Determines if the App Service will be integrated into a virtual network."
 }
 

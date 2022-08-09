@@ -1,3 +1,7 @@
+terraform {
+  experiments = [module_variable_optional_attrs]
+}
+
 locals {
   # in the rules defined here, there is an identifier that is used to indicate that the address should be the address of
   # the subnet in which the sql managed instance is provisioned (i.e. local.subnet_address_identifier). the reason an
@@ -210,6 +214,7 @@ module "sqlmi_primary" {
 
   allow_public_access         = var.allow_public_access
   application                 = var.application
+  diagnostics_settings        = var.diagnostics_settings
   environment                 = var.environment
   keyvault_id                 = var.keyvault_id
   location                    = var.managed_instance_properties.primary.location
@@ -232,6 +237,7 @@ module "sqlmi_secondary" {
 
   allow_public_access         = var.allow_public_access
   application                 = var.application
+  diagnostics_settings        = var.diagnostics_settings  
   environment                 = var.environment
   keyvault_id                 = var.keyvault_id
   location                    = var.managed_instance_properties.secondary.location

@@ -22,42 +22,31 @@ resource "azurerm_network_security_group" "network_security_group" {
   name                = "${module.globals.resource_base_name_long}-${lower(var.role)}-${module.globals.object_type_names.network_security_group}"
   resource_group_name = var.resource_group_name
   tags                = var.tags
+}
 
-  # TODO: security rules need to be done outside of the "azurerm_network_security_group" resource because any updates
-  #       to the list of security rules in the network security group via standalone security rules in some other place
-  #       will cause terraform to want to destroy the stand alone rules. you can't mix and match inline and stand alone
-  #       rules definitions per the NOTE at the top of the page here: https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_security_group
-  # TODO: this needs to be done via a for loop instead of a dynamic block, but that will currently destroy some of the
-  #       of the rules that are needed for the sql managed instance, which we don't want. see the comment for ip_restrictions
-  #       in the function_app resource "azurerm_function_app" "function_app" for discussion about why the for loop is needed.
-  dynamic "security_rule" {
-    for_each = var.network_security_group_rules
-
-    content {
-      access                                     = security_rule.value["access"]
-      description                                = security_rule.value["description"]
-      destination_address_prefix                 = security_rule.value["destination_address_prefix"]
-      destination_address_prefixes               = security_rule.value["destination_address_prefixes"]
-      destination_application_security_group_ids = security_rule.value["destination_application_security_group_ids"]
-      destination_port_range                     = security_rule.value["destination_port_range"]
-      destination_port_ranges                    = security_rule.value["destination_port_ranges"]
-      direction                                  = security_rule.value["direction"]
-      name                                       = security_rule.value["name"]
-      priority                                   = security_rule.value["priority"]
-      protocol                                   = security_rule.value["protocol"]
-      source_address_prefix                      = security_rule.value["source_address_prefix"]
-      source_application_security_group_ids      = security_rule.value["source_application_security_group_ids"]
-      source_port_range                          = security_rule.value["source_port_range"]
-      source_port_ranges                         = security_rule.value["source_port_ranges"]
-    }
+# network security group rules
+resource "azurerm_network_security_rule" "network_security_group_rules" {
+  for_each = {
+      for rule in var.network_security_group_rules : rule.name => rule
   }
 
-  # TODO: we are ignoring security_rules changes due to the issue with mixing and matching inline and stand alone rules definitions
-  lifecycle {
-    ignore_changes = [
-      security_rule
-    ]
-  }
+  access                                     = each.value.access
+  description                                = each.value.description
+  destination_address_prefix                 = each.value.destination_address_prefix
+  destination_address_prefixes               = each.value.destination_address_prefixes
+  destination_application_security_group_ids = each.value.destination_application_security_group_ids
+  destination_port_range                     = each.value.destination_port_range
+  destination_port_ranges                    = each.value.destination_port_ranges
+  direction                                  = each.value.direction
+  name                                       = each.value.name
+  network_security_group_name                = azurerm_network_security_group.network_security_group.name
+  priority                                   = each.value.priority
+  protocol                                   = each.value.protocol
+  resource_group_name                        = var.resource_group_name
+  source_address_prefix                      = each.value.source_address_prefix
+  source_application_security_group_ids      = each.value.source_application_security_group_ids
+  source_port_range                          = each.value.source_port_range
+  source_port_ranges                         = each.value.source_port_ranges
 }
 
 # subnet

@@ -15,7 +15,7 @@ resource "azurerm_resource_group" "resource_group" {
   tags     = var.tags
 }
 
-# add contributors to the resource group - TODO: is it possible to look up the principal id by name so we only have to specify names instead of identifiers
+# add contributors to the resource group - TODO: is it possible to look up the principal id by name so we only have to specify names in the .tfvars.json file?
 resource "azurerm_role_assignment" "contributor" {
   for_each = { for contributor in var.contributors : contributor.name => contributor }
 

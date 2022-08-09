@@ -1,6 +1,10 @@
 # TODO: add database creation to this
 #       - what process creates the tables?
-# TODO: it looks like changing the collation to something like SQL_Latin1_General_CI_AS_KS_WS during creation is not supported. need to find a way to change the collation once the creation is complete.
+# TODO: it looks like changing the collation to SQL_Latin1_General_CI_AS_KS_WS, which is required by the insight project because of sharepoint, during creation is not supported. need to find a way to change the collation once the creation is complete.
+
+terraform {
+  experiments = [module_variable_optional_attrs]
+}
 
 locals {
   arm_template_filename = "azuredeploy.json"
@@ -418,4 +422,22 @@ resource "azurerm_resource_group_template_deployment" "sqlmi" {
     azurerm_route.route_table_routes,
     azurerm_subnet_route_table_association.routetableassociation
   ]
+}
+
+# get the sql mi that was created by the arm deployment - used to add diagnostics settings below
+data "azurerm_resources" "sql" {
+  resource_group_name = var.resource_group_name
+  type                = "Microsoft.Sql/managedInstances"
+
+  depends_on = [
+    azurerm_resource_group_template_deployment.sqlmi
+  ]
+}
+
+# diagnostics settings
+module "diagnostic_settings" {
+  source = "../diagnostics_settings"
+
+  settings           = var.diagnostics_settings
+  target_resource_id = data.azurerm_resources.sql.resources[0].id
 }

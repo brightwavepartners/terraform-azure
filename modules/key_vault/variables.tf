@@ -1,3 +1,47 @@
+variable "alert_settings" {
+  type = list(
+    object(
+      {
+        action = object(
+          {
+            action_group_id = string
+          }
+        )
+        description = string
+        dynamic_criteria = optional(
+          object(
+            {
+              aggregation              = string
+              alert_sensitivity        = string
+              evaluation_failure_count = optional(number)
+              evaluation_total_count   = optional(number)
+              metric_name              = string
+              operator                 = string
+            }
+          )
+        )
+        enabled   = bool
+        frequency = optional(string)
+        name      = string
+        severity  = number
+        static_criteria = optional(
+          object(
+            {
+              aggregation = string
+              metric_name = string
+              operator    = string
+              threshold   = number
+            }
+          )
+        )
+        window_size = optional(string)
+      }
+    )
+  )
+  default     = []
+  description = "Defines alert settings for the Key Vault."
+}
+
 variable "allowed_ips" {
   type        = list(string)
   default     = []
@@ -7,6 +51,62 @@ variable "allowed_ips" {
 variable "application" {
   type        = string
   description = "The name of the application that this infrastructure is being provisioned for."
+}
+
+variable "diagnostics_settings" {
+  type = list(
+    object(
+      {
+        name = string
+        destination = object(
+          {
+            log_analytics_workspace = optional(
+              object(
+                {
+                  destination_type = optional(string)
+                  id               = string
+                }
+              )
+            )
+          }
+        )
+        logs = optional(
+          list(
+            object(
+              {
+                category = string
+                enabled  = bool
+                retention = object(
+                  {
+                    days    = number
+                    enabled = bool
+                  }
+                )
+              }
+            )
+          )
+        )
+        metrics = optional(
+          list(
+            object(
+              {
+                category = string
+                enabled  = bool
+                retention = object(
+                  {
+                    days    = number
+                    enabled = bool
+                  }
+                )
+              }
+            )
+          )
+        )
+      }
+    )
+  )
+  default     = []
+  description = "Defines the configuration for diagnostics settings on the App Service Plan."
 }
 
 variable "environment" {
@@ -29,6 +129,12 @@ variable "log_analytics_workspace_id" {
   type        = string
   default     = null
   description = "The unique identifier for a Log Analytics Workspace where Key Vault diagnostics logs will be sent."
+}
+
+variable "purge_protection_enabled" {
+  type        = bool
+  default     = false
+  description = "Whether or not to enable purge protection for the key vault."
 }
 
 variable "resource_group_name" {

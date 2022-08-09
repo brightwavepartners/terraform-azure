@@ -1,4 +1,12 @@
-# global naming conventions, resources, and other enterprise standards items
+terraform {
+  experiments = [module_variable_optional_attrs]
+}
+
+locals {
+    metric_namespace = "Microsoft.KeyVault/vaults"
+}
+
+# global naming conventions and resources
 module "globals" {
   source = "github.com/brightwavepartners/terraform-azure/modules/globals"
 
@@ -8,17 +16,21 @@ module "globals" {
   tenant      = var.tenant
 }
 
+# access the configuration of the azurerm provider.
+data "azurerm_client_config" "current" {}
+
 # keyvault
 resource "azurerm_key_vault" "keyvault" {
   enabled_for_disk_encryption = true
   location                    = var.location
   name                        = lower("${module.globals.resource_base_name_short}${substr(module.globals.role_names.secret_management, 0, length(module.globals.resource_base_name_short) - 4)}${module.globals.object_type_names.key_vault}")
   resource_group_name         = var.resource_group_name
-  purge_protection_enabled    = false
+  purge_protection_enabled    = var.purge_protection_enabled
   tenant_id                   = data.azurerm_client_config.current.tenant_id
   sku_name                    = var.sku
   tags                        = var.tags
 
+  # TODO: this technique needs to be in the documentation because we are using it in multiple places in the code
   # we are using a technique here with a dynamic block to have this module support both vnet
   # integrated and non-vnet integrated storage accounts. the dynamic block will be triggered
   # if the subnet_ids variable passed in is not null. if it is not, the storage account will
@@ -128,39 +140,56 @@ resource "azurerm_key_vault_access_policy" "keyvault_secrets_readonly_users" {
 
 # TODO: need to support configurations for diagnostics (e.g. enabled/disabled, different categories, different sinks, different metrics, etc.)
 
-# if a log analytics workspace id is provided, then enable diagnostics settings and send to the workspace
-resource "azurerm_monitor_diagnostic_setting" "diagnostic_setting" {
-  log_analytics_workspace_id = var.log_analytics_workspace_id
-  name                       = "All logs and metrics to Log Analytics"
-  target_resource_id         = azurerm_key_vault.keyvault.id
+# diagnostics settings
+module "diagnostic_settings" {
+  source = "../diagnostics_settings"
 
-  log {
-    category = "AzurePolicyEvaluationDetails"
-    enabled  = false
+  settings           = var.diagnostics_settings
+  target_resource_id = azurerm_key_vault.keyvault.id
+}
 
-    retention_policy {
-      days    = 0
-      enabled = false
+# alerts
+module "alerts" {
+  source = "../metric_alert"
+
+  for_each = { for alert_setting in var.alert_settings : alert_setting.name => alert_setting }
+
+  alert_settings = {
+    action = {
+      action_group_id = each.value.action.action_group_id
     }
-  }
-
-  log {
-    category = "AuditEvent"
-    enabled  = true
-
-    retention_policy {
-      enabled = true
-      days    = 90
-    }
-  }
-
-  metric {
-    category = "AllMetrics"
-    enabled  = true
-
-    retention_policy {
-      enabled = true
-      days    = 90
-    }
+    description = each.value.description
+    dynamic_criteria = try(
+      {
+        aggregation              = each.value.dynamic_criteria.aggregation
+        alert_sensitivity        = each.value.dynamic_criteria.alert_sensitivity
+        evaluation_failure_count = try(each.value.dynamic_criteria.evaluation_failure_count, null)
+        evaluation_total_count   = try(each.value.dynamic_criteria.evaluation_total_count, null)
+        metric_name              = each.value.dynamic_criteria.metric_name
+        metric_namespace         = local.metric_namespace
+        operator                 = each.value.dynamic_criteria.operator
+      },
+      null
+    )
+    enabled             = each.value.enabled
+    frequency           = each.value.frequency
+    name                = "${each.value.name} - ${azurerm_key_vault.keyvault.name}"
+    resource_group_name = var.resource_group_name
+    scopes = [
+      azurerm_key_vault.keyvault.id
+    ]
+    severity = each.value.severity
+    static_criteria = try(
+      {
+        aggregation      = each.value.static_criteria.aggregation
+        metric_name      = each.value.static_criteria.metric_name
+        metric_namespace = local.metric_namespace
+        operator         = each.value.static_criteria.operator
+        threshold        = each.value.static_criteria.threshold
+      },
+      null
+    )
+    tags        = var.tags
+    window_size = try(each.value.window_size, null)
   }
 }

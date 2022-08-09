@@ -8,6 +8,62 @@ variable "application" {
   description = "The name of the application that this infrastructure is being provisioned for."
 }
 
+variable "diagnostics_settings" {
+  type = list(
+    object(
+      {
+        name = string
+        destination = object(
+          {
+            log_analytics_workspace = optional(
+              object(
+                {
+                  destination_type = optional(string)
+                  id               = string
+                }
+              )
+            )
+          }
+        )
+        logs = optional(
+          list(
+            object(
+              {
+                category = string
+                enabled  = bool
+                retention = object(
+                  {
+                    days    = number
+                    enabled = bool
+                  }
+                )
+              }
+            )
+          )
+        )
+        metrics = optional(
+          list(
+            object(
+              {
+                category = string
+                enabled  = bool
+                retention = object(
+                  {
+                    days    = number
+                    enabled = bool
+                  }
+                )
+              }
+            )
+          )
+        )
+      }
+    )
+  )
+  default     = []
+  description = "Defines the configuration for diagnostics settings on the Service Bus."
+}
+
 variable "environment" {
   type        = string
   description = "The environment for which to provision the infrastructure (e.g. development, production)."
