@@ -10,12 +10,11 @@ locals {
     tier = "Free"
   }
   application = "diagnostics"
-  commit_id   = ""
   environment = "loc"
   location    = "northcentralus"
   log_analytics_workspace = {
     retention_period = 30
-    sku = "Free"
+    sku = "PerGB2018"
   }
   tags        = {}
   tenant      = "gressman"

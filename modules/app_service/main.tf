@@ -8,7 +8,7 @@ locals {
   default_app_settings = {
     "APPINSIGHTS_INSTRUMENTATIONKEY"                  = azurerm_application_insights.application_insights.instrumentation_key
     "APPLICATIONINSIGHTS_CONNECTION_STRING"           = "InstrumentationKey=${azurerm_application_insights.application_insights.instrumentation_key}"
-    "ApplicationInsightsAgent_EXTENSION_VERSION"      = "~2"
+    "ApplicationInsightsAgent_EXTENSION_VERSION"      = "~3"
     "XDT_MicrosoftApplicationInsights_Mode"           = "recommended"
     "APPINSIGHTS_PROFILERFEATURE_VERSION"             = "disabled"
     "APPINSIGHTS_SNAPSHOTFEATURE_VERSION"             = "disabled"
@@ -20,6 +20,9 @@ locals {
   }
   metric_namespace = "Microsoft.Web/sites"
 }
+
+# get information about the current azure session
+data "azurerm_client_config" "current" {}
 
 # global naming conventions and resources
 module "globals" {
@@ -41,6 +44,65 @@ resource "azurerm_application_insights" "application_insights" {
   workspace_id        = var.log_analytics_workspace_id
 }
 
+# application insights api key for app service diagnostics
+resource "azurerm_application_insights_api_key" "read_telemetry" {
+  name                    = "APPSERVICEDIAGNOSTICS_READONLYKEY_${local.app_service_name}"
+  application_insights_id = azurerm_application_insights.application_insights.id
+  read_permissions        = ["agentconfig", "aggregate", "api", "draft", "extendqueries", "search"]
+}
+
+# get token for current user so we can use the token in the rest call to the azure encryption engine
+resource "null_resource" "application_insights_app_service_diagnostics" {
+  provisioner "local-exec" {
+    command = <<EOT
+            az account set --subscription ${data.azurerm_client_config.current.subscription_id}
+
+            $token = Get-AzAccessToken
+            $token.Token | Out-File '${path.module}/token.txt'
+        EOT
+
+    interpreter = [
+      "pwsh",
+      "-Command"
+    ]
+  }
+}
+
+# save the token so it can be used later
+data "local_file" "token" {
+  filename = "${path.module}/token.txt"
+
+  depends_on = [
+    null_resource.application_insights_app_service_diagnostics
+  ]
+}
+
+# encrypt the api key
+data "http" "encrypted_ai_api_key" {
+  url = "https://appservice-diagnostics.azurefd.net/api/appinsights/encryptkey"
+
+  request_headers = {
+    Authorization   = "Bearer ${data.local_file.token.content_base64}"
+    Accept          = "application/json"
+    appinsights-key = "${azurerm_application_insights_api_key.read_telemetry.api_key}"
+  }
+}
+
+resource "null_resource" "debug_output" {
+  provisioner "local-exec" {
+    command = <<EOT
+            ${azurerm_application_insights.application_insights.app_id} | Out-File '${path.module}/ai_appid.txt'
+            ${azurerm_application_insights_api_key.read_telemetry.api_key} | Out-File '${path.module}/unencrypted_apikey.txt'
+            ${data.http.encrypted_ai_api_key.body} | Out-File '${path.module}/encrypted_apikey.txt'
+        EOT
+
+    interpreter = [
+      "pwsh",
+      "-Command"
+    ]
+  }
+}
+
 # app service
 resource "azurerm_app_service" "app_service" {
   app_service_plan_id = var.app_service_plan_id
@@ -49,9 +111,17 @@ resource "azurerm_app_service" "app_service" {
   name                = local.app_service_name
   resource_group_name = var.resource_group_name
 
-  tags = var.tags
+  # combine the hidden tag necessary to connect app insights to app service diagnostics
+  # with any that are passed in to end up with one set of tags for the app service
+  tags = merge(
+    var.tags,
+    {
+      "hidden-related:diagnostics/applicationInsightsSettings" = "{\"ApiKey\":${data.http.encrypted_ai_api_key.body},\"AppId\":\"${azurerm_application_insights.application_insights.app_id}\"}"
+    }
+  )
 
-  # combine the default app settings that never change with any that are passed in to end up with one set of app settings for the app service
+  # combine the default app settings that never change with any that are passed in to
+  # end up with one set of app settings for the app service
   app_settings = merge(
     local.default_app_settings,
     var.app_settings
