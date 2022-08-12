@@ -3,8 +3,12 @@ terraform {
 }
 
 locals {
-  app_service_name               = lower("${module.globals.resource_base_name_long}-${var.role}-${module.globals.object_type_names.app_service}")
+  # if the client code supplies a name, use it. otherwise, name the resource using the default naming convention.
+  app_service_name = coalesce(var.name, lower("${module.globals.resource_base_name_long}-${var.role}-${module.globals.object_type_names.app_service}"))
+
+  # enforce name length restriction and show an error if name is longer than maximum allowed for app services.
   assert_app_service_name_length = length(local.app_service_name) > module.globals.resource_name_max_length.app_service ? file("ERROR: App Service name ${local.app_service_name} exceeds maximum length of ${module.globals.resource_name_max_length.app_service}") : null
+
   default_app_settings = {
     "APPINSIGHTS_INSTRUMENTATIONKEY"                  = azurerm_application_insights.application_insights.instrumentation_key
     "APPLICATIONINSIGHTS_CONNECTION_STRING"           = "InstrumentationKey=${azurerm_application_insights.application_insights.instrumentation_key}"
@@ -18,6 +22,8 @@ locals {
     "XDT_MicrosoftApplicationInsights_BaseExtensions" = "~1"
     "XDT_MicrosoftApplicationInsights_PreemptSdk"     = "disabled"
   }
+
+  # the microsoft given namespace for app service metrics, used in diagnostics settings
   metric_namespace = "Microsoft.Web/sites"
 }
 
@@ -34,7 +40,7 @@ module "globals" {
   tenant      = var.tenant
 }
 
-# create an application insights instance that will be connected to the app service
+# create an application insights instance that will be connected to the app service - if enabled
 resource "azurerm_application_insights" "application_insights" {
   application_type    = "web"
   location            = var.location
@@ -51,14 +57,16 @@ resource "azurerm_application_insights_api_key" "read_telemetry" {
   read_permissions        = ["agentconfig", "aggregate", "api", "draft", "extendqueries", "search"]
 }
 
-# get token for current user so we can use the token in the rest call to the azure encryption engine
+# get token from the service principal so we can use the token in the rest call to the azure encryption engine
 resource "null_resource" "application_insights_app_service_diagnostics" {
   provisioner "local-exec" {
     command = <<EOT
-            az account set --subscription ${data.azurerm_client_config.current.subscription_id}
+            $password = ConvertTo-SecureString -String $env:ARM_CLIENT_SECRET -AsPlainText -Force
+            $Credential = New-Object -TypeName System.Management.Automation.PSCredential ($env:ARM_CLIENT_ID, $password)
+            Connect-AzAccount -ServicePrincipal -TenantId $env:ARM_TENANT_ID -Credential $Credential
 
             $token = Get-AzAccessToken
-            $token.Token | Out-File '${path.module}/token.txt'
+            $token.Token | Out-File '${path.root}/token.txt'
         EOT
 
     interpreter = [
@@ -68,9 +76,9 @@ resource "null_resource" "application_insights_app_service_diagnostics" {
   }
 }
 
-# save the token so it can be used later
+# access to the token file
 data "local_file" "token" {
-  filename = "${path.module}/token.txt"
+  filename = "${path.root}/token.txt"
 
   depends_on = [
     null_resource.application_insights_app_service_diagnostics
@@ -85,21 +93,6 @@ data "http" "encrypted_ai_api_key" {
     Authorization   = "Bearer ${data.local_file.token.content_base64}"
     Accept          = "application/json"
     appinsights-key = "${azurerm_application_insights_api_key.read_telemetry.api_key}"
-  }
-}
-
-resource "null_resource" "debug_output" {
-  provisioner "local-exec" {
-    command = <<EOT
-            ${azurerm_application_insights.application_insights.app_id} | Out-File '${path.module}/ai_appid.txt'
-            ${azurerm_application_insights_api_key.read_telemetry.api_key} | Out-File '${path.module}/unencrypted_apikey.txt'
-            ${data.http.encrypted_ai_api_key.body} | Out-File '${path.module}/encrypted_apikey.txt'
-        EOT
-
-    interpreter = [
-      "pwsh",
-      "-Command"
-    ]
   }
 }
 
@@ -215,6 +208,24 @@ resource "azurerm_app_service" "app_service" {
       app_settings["ServiceBusConnection"]
     ]
   }
+}
+
+# delete the file used to store the user's token
+resource "null_resource" "token_file_remove" {
+  provisioner "local-exec" {
+    command = <<EOT
+            Remove-Item '${path.root}/token.txt'
+        EOT
+
+    interpreter = [
+      "pwsh",
+      "-Command"
+    ]
+  }
+
+  depends_on = [
+    azurerm_app_service.app_service
+  ]
 }
 
 # vnet integration for app service - if enabled

@@ -39,7 +39,7 @@ variable "alert_settings" {
     )
   )
   default     = []
-  description = "Defines alert settings for the Function App."
+  description = "Defines alert settings for the App Service."
 }
 
 variable "always_on" {
@@ -62,6 +62,12 @@ variable "app_settings" {
 variable "application" {
   type        = string
   description = "The name of the application that this infrastructure is being provisioned for."
+}
+
+variable "application_insights_enabled" {
+  type = bool
+  default = false
+  description = "Determines if Application Insights will be enabled for the App Service."
 }
 
 variable "cors_settings" {
@@ -179,6 +185,12 @@ variable "log_analytics_workspace_id" {
   type        = string
   default     = null
   description = "The Azure resource identifier for a Log Analytics Workspace that Application Insight instances will be attached to."
+}
+
+variable "name" {
+  type = string
+  default = null
+  description = "The name to give to the App Service. If no name is provided, a default name will be used based on the global azure naming convention of this library."
 }
 
 variable "resource_group_name" {

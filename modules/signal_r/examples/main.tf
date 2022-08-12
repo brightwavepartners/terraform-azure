@@ -8,7 +8,7 @@ module "resource_group" {
     location = "northcentralus"
     readers = []
     tags = {}
-    tenant = "crowe"
+    tenant = "mytenant"
 }
 
 # signal r
@@ -19,10 +19,7 @@ module "signal_r" {
     capacity = 1
     connectivity_logs_enabled = false
     cors = {
-      allowed_origins = [
-        "https://crowe-insight-dev-ncus-api-apim.azure-api.net",
-        "https://crowe.sharepoint.com"
-      ]
+      allowed_origins = ["*"]
     }
     environment = "dev"
     location = "northcentralus"
@@ -31,5 +28,5 @@ module "signal_r" {
     service_mode = "Serverless"
     sku = "Standard_S1"
     tags = {}
-    tenant = "crowe"
+    tenant = "mytenant"
 }
