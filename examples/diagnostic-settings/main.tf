@@ -60,7 +60,6 @@ module "app_service" {
   environment                = local.environment
   location                   = local.location
   log_analytics_workspace_id = module.log_analytics_workspace.id
-  name                       = "gressman-diagn-loc-ncus"
   resource_group_name        = module.resource_group.name
   role                       = "appone"
   tags                       = local.tags

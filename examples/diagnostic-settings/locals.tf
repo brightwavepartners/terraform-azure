@@ -17,5 +17,5 @@ locals {
     sku = "PerGB2018"
   }
   tags        = {}
-  tenant      = "gressman"
+  tenant      = var.tenant
 }

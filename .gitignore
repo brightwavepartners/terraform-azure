@@ -33,5 +33,8 @@ override.tf.json
 .terraformrc
 terraform.rc
 
-# Ignore devcontainer environment
+# Ignore devcontainer environment variables since those are specific to a user's environment
 **/.devcontainer/*.env
+
+# Ignore access token files
+**/token.txt

@@ -40,7 +40,7 @@ module "globals" {
   tenant      = var.tenant
 }
 
-# create an application insights instance that will be connected to the app service - if enabled
+# create an application insights instance that will be connected to the app service
 resource "azurerm_application_insights" "application_insights" {
   application_type    = "web"
   location            = var.location
@@ -210,11 +210,16 @@ resource "azurerm_app_service" "app_service" {
   }
 }
 
-# delete the file used to store the user's token
+# delete the content from the file used to store the user's token
+#   can't just delete the file because a destroy operation that may
+#   come later would fail if the file is deleted, since the data
+#   source above is dependent on the file existing. to make sure
+#   the token is not left around after this script is executed,
+#   delete the file contents.
 resource "null_resource" "token_file_remove" {
   provisioner "local-exec" {
     command = <<EOT
-            Remove-Item '${path.root}/token.txt'
+            New-Item -Name '${path.root}/token.txt' -ItemType File -Force
         EOT
 
     interpreter = [
