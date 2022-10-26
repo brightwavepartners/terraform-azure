@@ -41,11 +41,11 @@ locals {
     "uat"           = local.environment_short_name_uat
   }
 
-  # some resources in azure have length restrictions on their name. for those resources
-  # with a length restriction, we need to derive a short-name. the variable that derives a
+  # some resources in azure have length restrictions on their name. for those resources with
+  # that length restriction, we need to derive a short-name. the variable that derives a
   # short-name is 'resource_base_name_short', and it uses this variable to determine how
   # many characters to use from the environment in the short-name.
-  environment_name_max_length = 4
+  environment_name_max_length = 3
 
   environment_short_name_development = "dev"
   environment_short_name_local       = "loc"
@@ -67,8 +67,8 @@ locals {
     "scus"           = "scus"
   }
 
-  # some resources in azure have length restrictions on their name. for those resources
-  # with a length restriction, we need to derive a short-name. the variable that derives a
+  # some resources in azure have length restrictions on their name. for those resources with
+  # that length restriction, we need to derive a short-name. the variable that derives a
   # short-name is 'resource_base_name_short', and it uses this variable to determine how
   # many characters to use from the location in the short-name.
   location_name_max_length = 4
@@ -89,6 +89,7 @@ locals {
     "key_vault"               = "kv"
     "log_analytics_workspace" = "law"
     "network_security_group"  = "nsg"
+    "public_ip"               = "pip"
     "redis_cache"             = "rc"
     "rediscache"              = "rc"
     "route_table"             = "rt"
@@ -98,6 +99,8 @@ locals {
     "storage_account"         = "sa"
     "subnet"                  = "sn"
     "virtual_network"         = "vn"
+    "virtual_network_gateway" = "vng"
+    "vpn_connection"          = "conn"
   }
 
   # every resource that is created begins with a common "base name". that base name follows the pattern:
@@ -113,7 +116,7 @@ locals {
   #                    environments while keeping the resource name different than other environments.
   #   4. location - an application may be deployed to multiple locations to support high-availability. this token
   #                 ensures that the same resource can be deployed to multiple locations while keeping the
-  #                 resource name different across those locations.
+  #                 resource name different than other locations.
   #
   # some resources in azure have length restrictions on their names (e.g. storage account name length cannot exceed 24 characters).
   # in cases where a resource name is not name length restricted, we use the 'resource_base_name_long' for its common base name.
@@ -148,7 +151,6 @@ locals {
     "redis"               = "cache"
     "redis_cache"         = "cache"
     "secret_management"   = "secrets"
-    "signalr"             = "notification"
   }
 
   # some resources in azure have length restrictions on their name. for those resources with

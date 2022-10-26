@@ -3,9 +3,7 @@ terraform {
 }
 
 locals {
-  app_service_plan_name               = lower("${module.globals.resource_base_name_long}-${var.role}-${module.globals.object_type_names.app_service_plan}")
-  assert_app_service_plan_name_length = length(local.app_service_plan_name) > module.globals.resource_name_max_length.app_service_plan ? file("ERROR: App Service Plan name ${local.app_service_plan_name} exceeds maximum length of ${module.globals.resource_name_max_length.app_service_plan}") : null
-  metric_namespace = "Microsoft.Web/serverFarms"
+    metric_namespace = "Microsoft.DataFactory/factories"
 }
 
 # global naming conventions and resources
@@ -18,42 +16,32 @@ module "globals" {
   tenant      = var.tenant
 }
 
-# app service plan
-resource "azurerm_app_service_plan" "appserviceplan" {
-  kind                         = var.kind
-  location                     = var.location
-  maximum_elastic_worker_count = var.maximum_elastic_worker_count
-  name                         = local.app_service_plan_name
-  resource_group_name          = var.resource_group_name
-  tags                         = var.tags
+# access the configuration of the azurerm provider.
+data "azurerm_client_config" "current" {}
 
-  sku {
-    size = var.size
-    tier = var.tier
-  }
-}
-
-# if an auto-scale setting is defined
-module "appserviceplan_autoscale" {
-  source = "../autoscale_setting"
-
-  for_each = {
-      for scale_setting in var.scale_settings : scale_setting.name => scale_setting
-  }
-
-  app_service_plan_id = azurerm_app_service_plan.appserviceplan.id
-  location = var.location
+# data factory
+resource "azurerm_data_factory" "data_factory" {
+  location            = var.location
+  name                = "${module.globals.resource_base_name_long}-${module.globals.role_names.data}-${module.globals.object_type_names.data_factory}"
   resource_group_name = var.resource_group_name
-  settings = each.value
-  tags = var.tags
-}
+  tags                = var.tags
 
-# diagnostics settings
-module "diagnostic_settings" {
-  source = "../diagnostics_settings"
+  dynamic "vsts_configuration" {
+    for_each = var.vsts_configuration == null ? [] : [1]
 
-  settings           = var.diagnostics_settings
-  target_resource_id = azurerm_app_service_plan.appserviceplan.id
+    content {
+      account_name = var.vsts_configuration.account_name
+      branch_name = var.vsts_configuration.branch_name
+      project_name = var.vsts_configuration.project_name
+      repository_name = var.vsts_configuration.repository_name
+      root_folder = var.vsts_configuration.root_folder
+      tenant_id = data.azurerm_client_config.current.tenant_id
+    }
+  }
+
+  identity {
+    type = "SystemAssigned"
+  }
 }
 
 # alerts
@@ -81,15 +69,16 @@ module "alerts" {
     )
     enabled             = each.value.enabled
     frequency           = each.value.frequency
-    name                = "${each.value.name} - ${azurerm_app_service_plan.appserviceplan.name}"
+    name                = "${each.value.name} - ${azurerm_data_factory.data_factory.name}"
     resource_group_name = var.resource_group_name
     scopes = [
-      azurerm_app_service_plan.appserviceplan.id
+      azurerm_data_factory.data_factory.id
     ]
     severity = each.value.severity
     static_criteria = try(
       {
         aggregation      = each.value.static_criteria.aggregation
+        dimensions       = each.value.static_criteria.dimensions
         metric_name      = each.value.static_criteria.metric_name
         metric_namespace = local.metric_namespace
         operator         = each.value.static_criteria.operator

@@ -1,3 +1,47 @@
+variable "alert_settings" {
+  type = list(
+    object(
+      {
+        action = object(
+          {
+            action_group_id = string
+          }
+        )
+        description = string
+        dynamic_criteria = optional(
+          object(
+            {
+              aggregation              = string
+              alert_sensitivity        = string
+              evaluation_failure_count = optional(number)
+              evaluation_total_count   = optional(number)
+              metric_name              = string
+              operator                 = string
+            }
+          )
+        )
+        enabled   = bool
+        frequency = optional(string)
+        name      = string
+        severity  = number
+        static_criteria = optional(
+          object(
+            {
+              aggregation = string
+              metric_name = string
+              operator    = string
+              threshold   = number
+            }
+          )
+        )
+        window_size = optional(string)
+      }
+    )
+  )
+  default     = []
+  description = "Defines alert settings for the Service Bus."
+}
+
 variable "allowed_ips" {
   type        = list(string)
   description = "The Service Bus is integrated into a virtual network. This is the list of IP addresses that are outside the virtual network that will be allowed to access the Service Bus."
@@ -14,6 +58,62 @@ variable "capacity" {
   description = "Specifies capacity when the sku is Premium. Basic and Standard skus can only have a capcity of 0."
 }
 
+variable "diagnostics_settings" {
+  type = list(
+    object(
+      {
+        name = string
+        destination = object(
+          {
+            log_analytics_workspace = optional(
+              object(
+                {
+                  destination_type = optional(string)
+                  id               = string
+                }
+              )
+            )
+          }
+        )
+        logs = optional(
+          list(
+            object(
+              {
+                category = string
+                enabled  = bool
+                retention = object(
+                  {
+                    days    = number
+                    enabled = bool
+                  }
+                )
+              }
+            )
+          )
+        )
+        metrics = optional(
+          list(
+            object(
+              {
+                category = string
+                enabled  = bool
+                retention = object(
+                  {
+                    days    = number
+                    enabled = bool
+                  }
+                )
+              }
+            )
+          )
+        )
+      }
+    )
+  )
+  default     = []
+  description = "Defines the configuration for diagnostics settings on the Service Bus."
+}
+
 variable "environment" {
   type        = string
   description = "The environment for which to provision the infrastructure (e.g. development, production)"
@@ -22,11 +122,6 @@ variable "environment" {
 variable "location" {
   type        = string
   description = "The Azure region where the function app will be deployed."
-}
-
-variable "log_analytics_workspace_id" {
-  type        = string
-  description = "The unique identifier for a Log Analytics Workspace where Service Bus diagnostics logs will be sent."
 }
 
 variable "resource_group_name" {
@@ -52,6 +147,34 @@ variable "tags" {
 variable "tenant" {
   type        = string
   description = "Tenant name."
+}
+
+variable "topics" {
+  type = list(
+    object(
+      {
+        enable_batched_operations = bool,
+        name                      = string,
+        policies = list(
+          object(
+            {
+              name = string,
+              claims = object(
+                {
+                  listen = bool,
+                  manage = bool,
+                  send   = bool
+                }
+              )
+            }
+          )
+        ),
+        support_ordering = bool
+      }
+    )
+  )
+  default     = []
+  description = "The list of topics to create on the Service Bus."
 }
 
 # we could trigger vnet integration based on whether valid subnet_ids is passed or not.

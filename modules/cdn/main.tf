@@ -2,8 +2,13 @@
 #       in a generic way to be a true enterprise module. for now, those items are hard-coded
 #       in the azuredeploy.json
 
+terraform {
+  experiments = [module_variable_optional_attrs]
+}
+
 locals {
   arm_template_filename = "azuredeploy.json"
+  metric_namespace = "Microsoft.Cdn/profiles"
   originConfiguration = {
     originGroups = [
       {
@@ -37,6 +42,52 @@ resource "azurerm_cdn_profile" "profile" {
   resource_group_name = var.resource_group_name
   sku                 = var.profile_sku
   tags                = var.tags
+}
+
+# alerts
+module "alerts" {
+  source = "../metric_alert"
+
+  for_each = { for alert_setting in var.alert_settings : alert_setting.name => alert_setting }
+
+  alert_settings = {
+    action = {
+      action_group_id = each.value.action.action_group_id
+    }
+    description = each.value.description
+    dynamic_criteria = try(
+      {
+        aggregation              = each.value.dynamic_criteria.aggregation
+        alert_sensitivity        = each.value.dynamic_criteria.alert_sensitivity
+        evaluation_failure_count = try(each.value.dynamic_criteria.evaluation_failure_count, null)
+        evaluation_total_count   = try(each.value.dynamic_criteria.evaluation_total_count, null)
+        metric_name              = each.value.dynamic_criteria.metric_name
+        metric_namespace         = local.metric_namespace
+        operator                 = each.value.dynamic_criteria.operator
+      },
+      null
+    )
+    enabled             = each.value.enabled
+    frequency           = each.value.frequency
+    name                = "${each.value.name} - ${azurerm_cdn_profile.profile.name}"
+    resource_group_name = var.resource_group_name
+    scopes = [
+      azurerm_cdn_profile.profile.id
+    ]
+    severity = each.value.severity
+    static_criteria = try(
+      {
+        aggregation      = each.value.static_criteria.aggregation
+        metric_name      = each.value.static_criteria.metric_name
+        metric_namespace = local.metric_namespace
+        operator         = each.value.static_criteria.operator
+        threshold        = each.value.static_criteria.threshold
+      },
+      null
+    )
+    tags        = var.tags
+    window_size = try(each.value.window_size, null)
+  }
 }
 
 # endpoint

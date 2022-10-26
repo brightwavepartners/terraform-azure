@@ -72,6 +72,12 @@ resource "azuread_application" "app_registration" {
       id_token_issuance_enabled     = var.web.implicit_grant.issue_id_tokens
     }
   }
+
+  lifecycle {
+    ignore_changes = [
+      owners
+    ]
+  }
 }
 
 # service principal attached to the app registration

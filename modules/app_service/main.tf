@@ -3,12 +3,16 @@ terraform {
 }
 
 locals {
-  app_service_name               = lower("${module.globals.resource_base_name_long}-${var.role}-${module.globals.object_type_names.app_service}")
+  # if the client code supplies a name, use it. otherwise, name the resource using the default naming convention.
+  app_service_name = coalesce(var.name, lower("${module.globals.resource_base_name_long}-${var.role}-${module.globals.object_type_names.app_service}"))
+
+  # enforce name length restriction and show an error if name is longer than maximum allowed for app services.
   assert_app_service_name_length = length(local.app_service_name) > module.globals.resource_name_max_length.app_service ? file("ERROR: App Service name ${local.app_service_name} exceeds maximum length of ${module.globals.resource_name_max_length.app_service}") : null
+
   default_app_settings = {
     "APPINSIGHTS_INSTRUMENTATIONKEY"                  = azurerm_application_insights.application_insights.instrumentation_key
     "APPLICATIONINSIGHTS_CONNECTION_STRING"           = "InstrumentationKey=${azurerm_application_insights.application_insights.instrumentation_key}"
-    "ApplicationInsightsAgent_EXTENSION_VERSION"      = "~2"
+    "ApplicationInsightsAgent_EXTENSION_VERSION"      = "~3"
     "XDT_MicrosoftApplicationInsights_Mode"           = "recommended"
     "APPINSIGHTS_PROFILERFEATURE_VERSION"             = "disabled"
     "APPINSIGHTS_SNAPSHOTFEATURE_VERSION"             = "disabled"
@@ -18,7 +22,13 @@ locals {
     "XDT_MicrosoftApplicationInsights_BaseExtensions" = "~1"
     "XDT_MicrosoftApplicationInsights_PreemptSdk"     = "disabled"
   }
+
+  # the microsoft given namespace for app service metrics, used in diagnostics settings
+  metric_namespace = "Microsoft.Web/sites"
 }
+
+# get information about the current azure session
+data "azurerm_client_config" "current" {}
 
 # global naming conventions and resources
 module "globals" {
@@ -40,6 +50,52 @@ resource "azurerm_application_insights" "application_insights" {
   workspace_id        = var.log_analytics_workspace_id
 }
 
+# application insights api key for app service diagnostics
+resource "azurerm_application_insights_api_key" "read_telemetry" {
+  name                    = "APPSERVICEDIAGNOSTICS_READONLYKEY_${local.app_service_name}"
+  application_insights_id = azurerm_application_insights.application_insights.id
+  read_permissions        = ["agentconfig", "aggregate", "api", "draft", "extendqueries", "search"]
+}
+
+# get token from the service principal so we can use the token in the rest call to the azure encryption engine
+resource "null_resource" "application_insights_app_service_diagnostics" {
+  provisioner "local-exec" {
+    command = <<EOT
+            $password = ConvertTo-SecureString -String $env:ARM_CLIENT_SECRET -AsPlainText -Force
+            $Credential = New-Object -TypeName System.Management.Automation.PSCredential ($env:ARM_CLIENT_ID, $password)
+            Connect-AzAccount -ServicePrincipal -TenantId $env:ARM_TENANT_ID -Credential $Credential
+
+            $token = Get-AzAccessToken
+            $token.Token | Out-File '${path.root}/token.txt'
+        EOT
+
+    interpreter = [
+      "pwsh",
+      "-Command"
+    ]
+  }
+}
+
+# access to the token file
+data "local_file" "token" {
+  filename = "${path.root}/token.txt"
+
+  depends_on = [
+    null_resource.application_insights_app_service_diagnostics
+  ]
+}
+
+# encrypt the api key
+data "http" "encrypted_ai_api_key" {
+  url = "https://appservice-diagnostics.azurefd.net/api/appinsights/encryptkey"
+
+  request_headers = {
+    Authorization   = "Bearer ${data.local_file.token.content_base64}"
+    Accept          = "application/json"
+    appinsights-key = "${azurerm_application_insights_api_key.read_telemetry.api_key}"
+  }
+}
+
 # app service
 resource "azurerm_app_service" "app_service" {
   app_service_plan_id = var.app_service_plan_id
@@ -48,9 +104,17 @@ resource "azurerm_app_service" "app_service" {
   name                = local.app_service_name
   resource_group_name = var.resource_group_name
 
-  tags = var.tags
+  # combine the hidden tag necessary to connect app insights to app service diagnostics
+  # with any that are passed in to end up with one set of tags for the app service
+  tags = merge(
+    var.tags,
+    {
+      "hidden-related:diagnostics/applicationInsightsSettings" = "{\"ApiKey\":${data.http.encrypted_ai_api_key.body},\"AppId\":\"${azurerm_application_insights.application_insights.app_id}\"}"
+    }
+  )
 
-  # combine the default app settings that never change with any that are passed in to end up with one set of app settings for the app service
+  # combine the default app settings that never change with any that are passed in to
+  # end up with one set of app settings for the app service
   app_settings = merge(
     local.default_app_settings,
     var.app_settings
@@ -74,7 +138,7 @@ resource "azurerm_app_service" "app_service" {
   site_config {
     always_on = var.always_on
     cors {
-      allowed_origins = [
+      allowed_origins = try([
         for origin in [
           for origin in var.cors_settings.allowed_origins :
           replace(
@@ -88,8 +152,8 @@ resource "azurerm_app_service" "app_service" {
           "$${var.location}",
           module.globals.location_short_name_list[var.location]
         )
-      ]
-      support_credentials = var.cors_settings.support_credentials
+      ], [])
+      support_credentials = try(var.cors_settings.support_credentials, false)
     }
 
     default_documents = [
@@ -105,7 +169,7 @@ resource "azurerm_app_service" "app_service" {
     ]
 
     dotnet_framework_version = var.dotnet_framework_version
-    ftps_state = "FtpsOnly"
+    ftps_state               = "FtpsOnly"
 
     # we are doing the ip_restriction attribute via a for loop instead of dynamic block because
     # a dynamic block will not construct an empty list to remove all rules if the passed in 
@@ -125,15 +189,48 @@ resource "azurerm_app_service" "app_service" {
     ]
 
     use_32_bit_worker_process = var.use_32_bit_worker_process
-    vnet_route_all_enabled = var.vnet_route_all_enabled
+    vnet_route_all_enabled    = var.vnet_route_all_enabled
   }
 
-  # TODO: this shouldn't be here in an enterprise module, but don't have a way to set this from outside at the moment
+  # TODO: this shouldn't be here in an enterprise module, but don't have a way to set this from outside since the lifecycle
+  # meta-argument only allows literal values (https://www.terraform.io/language/meta-arguments/lifecycle#literal-values-only).auth_settings)
+  # there is a github issue to support dynamic blocks in met-arguments here https://github.com/hashicorp/terraform/issues/24188,
+  # but it seems unlikely this will be addressed.  a workaround might be to place a token identifier here and have
+  # a separate process, perhaps in a ci/cd pipeline, replace the token identifier with the dynamic content before the code
+  # is actually executed. but that requires an external process to "transform" this section. you would no longer be running
+  # the terraform commands directly (e.g. terraform plan), but instead would always run the separate process which would run the
+  # terraform command internally after transformation.
   lifecycle {
     ignore_changes = [
-      app_settings
+      app_settings["AzureWebJobsDashboard"],
+      app_settings["AzureWebJobsStorage"],
+      app_settings["IsDisabled"],
+      app_settings["ServiceBusConnection"]
     ]
   }
+}
+
+# delete the content from the file used to store the user's token
+#   can't just delete the file because a destroy operation that may
+#   come later would fail if the file is deleted, since the data
+#   source above is dependent on the file existing. to make sure
+#   the token is not left around after this script is executed,
+#   delete the file contents.
+resource "null_resource" "token_file_remove" {
+  provisioner "local-exec" {
+    command = <<EOT
+            New-Item -Name '${path.root}/token.txt' -ItemType File -Force
+        EOT
+
+    interpreter = [
+      "pwsh",
+      "-Command"
+    ]
+  }
+
+  depends_on = [
+    azurerm_app_service.app_service
+  ]
 }
 
 # vnet integration for app service - if enabled
@@ -145,5 +242,59 @@ resource "azurerm_app_service_virtual_network_swift_connection" "vnet_integratio
 
   timeouts {
     create = "1h"
+  }
+}
+
+# diagnostics settings
+module "diagnostic_settings" {
+  source = "../diagnostics_settings"
+
+  settings           = var.diagnostics_settings
+  target_resource_id = azurerm_app_service.app_service.id
+}
+
+# alerts
+module "alerts" {
+  source = "../metric_alert"
+
+  for_each = { for alert_setting in var.alert_settings : alert_setting.name => alert_setting }
+
+  alert_settings = {
+    action = {
+      action_group_id = each.value.action.action_group_id
+    }
+    description = each.value.description
+    dynamic_criteria = try(
+      {
+        aggregation              = each.value.dynamic_criteria.aggregation
+        alert_sensitivity        = each.value.dynamic_criteria.alert_sensitivity
+        evaluation_failure_count = try(each.value.dynamic_criteria.evaluation_failure_count, null)
+        evaluation_total_count   = try(each.value.dynamic_criteria.evaluation_total_count, null)
+        metric_name              = each.value.dynamic_criteria.metric_name
+        metric_namespace         = local.metric_namespace
+        operator                 = each.value.dynamic_criteria.operator
+      },
+      null
+    )
+    enabled             = each.value.enabled
+    frequency           = each.value.frequency
+    name                = "${each.value.name} - ${azurerm_app_service.app_service.name}"
+    resource_group_name = var.resource_group_name
+    scopes = [
+      azurerm_app_service.app_service.id
+    ]
+    severity = each.value.severity
+    static_criteria = try(
+      {
+        aggregation      = each.value.static_criteria.aggregation
+        metric_name      = each.value.static_criteria.metric_name
+        metric_namespace = local.metric_namespace
+        operator         = each.value.static_criteria.operator
+        threshold        = each.value.static_criteria.threshold
+      },
+      null
+    )
+    tags        = var.tags
+    window_size = try(each.value.window_size, null)
   }
 }
