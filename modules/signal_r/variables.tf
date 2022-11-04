@@ -5,6 +5,7 @@ variable "application" {
 
 variable "capacity" {
   type        = number
+  default     = 1
   description = "Specifies the number of units associated with this SignalR service."
 }
 
@@ -49,15 +50,24 @@ variable "service_mode" {
   type        = string
   default     = "Default"
   description = "Specifies the service mode for the SignalR instance."
+  validation {
+    condition = try(index(["Classic", "Default", "Serverless"], var.service_mode), -1) >= 0 ? true : false
+    error_message = "Expected sku to be one of [Classic Default Serverless], got ${var.service_mode}."
+  }
 }
 
 variable "sku" {
   type        = string
   description = "Specifies the SignalR product type."
+  validation {
+    condition = try(index(["Free_F1", "Standard_S1", "Premium_P1"], var.sku), -1) >= 0 ? true : false
+    error_message = "Expected sku to be one of [Free_F1 Standard_S1 Premium_P1], got ${var.sku}."
+  }
 }
 
 variable "tags" {
   type        = map(string)
+  default     = {}
   description = "String values used to organize resources."
 }
 
