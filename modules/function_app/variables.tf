@@ -306,9 +306,3 @@ variable "worker_runtime_type" {
     error_message = "Expected worker_runtime_type to be one of [dotnet dotnet-isolated java node powershell python], got ${var.worker_runtime_type}."
   }  
 }
-
-variable "workspace_id" {
-  type        = string
-  default     = null
-  description = "The Azure resource identifier for a Log Analytics Workspace that the Application Insights for the App Service will be attached to."
-}

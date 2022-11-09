@@ -19,6 +19,19 @@ module "resource_group" {
   tenant      = local.tenant
 }
 
+# log analytics workspace
+module "log_analytics_workspace" {
+  source = "../../modules/log_analytics_workspace"
+
+  application         = local.application
+  environment         = local.environment
+  location            = local.location
+  resource_group_name = module.resource_group.name
+  retention_period    = local.log_analytics_workspace.retention_period
+  sku                 = local.log_analytics_workspace.sku
+  tenant              = local.tenant
+}
+
 # signalr
 module "signalr" {
   source = "../../modules/signal_r"
@@ -50,13 +63,14 @@ module "app_service_plan" {
 module "signalr_hub" {
   source = "../../modules/function_app"
 
-  app_service_plan_id = module.app_service_plan.id
-  application         = local.application
-  environment         = local.environment
-  functions_runtime_version = "~4"
-  location            = local.location
-  role                = "signalrhub"
-  tenant              = local.tenant
-  resource_group_name = module.resource_group.name
-  worker_runtime_type = "dotnet"
+  app_service_plan_id        = module.app_service_plan.id
+  application                = local.application
+  environment                = local.environment
+  functions_runtime_version  = "~4"
+  location                   = local.location
+  role                       = "signalrhub"
+  tenant                     = local.tenant
+  resource_group_name        = module.resource_group.name
+  worker_runtime_type        = "dotnet"
+  log_analytics_workspace_id = module.log_analytics_workspace.id
 }
