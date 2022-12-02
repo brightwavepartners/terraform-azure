@@ -52,7 +52,8 @@ variable "alert_settings" {
   description = "Defines alert settings for the Storage Account."
 }
 
-variable "allow_blob_public_access" {
+
+variable "allow_nested_items_to_be_public" {
   type        = bool
   default     = false
   description = "Whether or not to allow public access to all blobs or containers in the storage account."

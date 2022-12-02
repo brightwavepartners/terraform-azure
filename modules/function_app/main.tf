@@ -130,21 +130,6 @@ resource "azurerm_function_app" "function_app" {
     use_32_bit_worker_process = var.use_32_bit_worker_process
     vnet_route_all_enabled    = var.vnet_route_all_enabled
   }
-
-  # TODO: this shouldn't be here in an enterprise module, but don't have a way to set this from outside since the lifecycle
-  # meta-argument only allows literal values (https://www.terraform.io/language/meta-arguments/lifecycle#literal-values-only).auth_settings)
-  # there is a github issue to support dynamic blocks in met-arguments here https://github.com/hashicorp/terraform/issues/24188,
-  # but it seems unlikely this will be addressed.  a workaround might be to place a token identifier here and have
-  # a separate process, perhaps in a ci/cd pipeline, replace the token identifier with the dynamic content before the code
-  # is actually executed. but that requires an external process to "transform" this section. you would no longer be running
-  # the terraform commands directly (e.g. terraform plan), but instead would always run the separate process which would run the
-  # terraform command internally after transformation.
-  lifecycle {
-    ignore_changes = [
-      app_settings["ServiceBusConnection"],
-      app_settings["IsDisabled"]
-    ]
-  }
 }
 
 # vnet integration for function app - if enabled

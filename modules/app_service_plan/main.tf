@@ -5,6 +5,17 @@ terraform {
 locals {
   app_service_plan_name               = lower("${module.globals.resource_base_name_long}-${var.role}-${module.globals.object_type_names.app_service_plan}")
   assert_app_service_plan_name_length = length(local.app_service_plan_name) > module.globals.resource_name_max_length.app_service_plan ? file("ERROR: App Service Plan name ${local.app_service_plan_name} exceeds maximum length of ${module.globals.resource_name_max_length.app_service_plan}") : null
+  
+  # there is a setting for elastic app service plans called 'maximum_elastic_worker_count'
+  # that can be set to define the macimum number of workers when scaling the plan. that
+  # setting is only valid on elastic app service plans and if we try to set it when the
+  # desired plan is not an elastic app service plan, an error will be thrown. to keep this
+  # module usable in either case of an elastic or non-elastic plan is desired, we need to
+  # know during the app service plan provisioining whether the desired plan is elastic or
+  # not. if it is, go ahead and set the worker count value. if the desired plan is not
+  # elastic, do not attempt to set the worker count value to prevent an error.
+  is_elastic_plan = try(index(["EP1", "EP2", "EP3"], var.sku_name), -1) >= 0 ? true : false
+  
   metric_namespace = "Microsoft.Web/serverFarms"
 }
 
@@ -19,18 +30,14 @@ module "globals" {
 }
 
 # app service plan
-resource "azurerm_app_service_plan" "appserviceplan" {
-  kind                         = var.kind
+resource "azurerm_service_plan" "appserviceplan" {
   location                     = var.location
-  maximum_elastic_worker_count = var.maximum_elastic_worker_count
+  maximum_elastic_worker_count = local.is_elastic_plan ? var.maximum_elastic_worker_count : null
   name                         = local.app_service_plan_name
+  os_type                      = var.os_type
   resource_group_name          = var.resource_group_name
+  sku_name                     = var.sku_name
   tags                         = var.tags
-
-  sku {
-    size = var.size
-    tier = var.tier
-  }
 }
 
 # if an auto-scale setting is defined
@@ -41,7 +48,7 @@ module "appserviceplan_autoscale" {
       for scale_setting in var.scale_settings : scale_setting.name => scale_setting
   }
 
-  app_service_plan_id = azurerm_app_service_plan.appserviceplan.id
+  app_service_plan_id = azurerm_service_plan.appserviceplan.id
   location = var.location
   resource_group_name = var.resource_group_name
   settings = each.value
@@ -53,7 +60,7 @@ module "diagnostic_settings" {
   source = "../diagnostics_settings"
 
   settings           = var.diagnostics_settings
-  target_resource_id = azurerm_app_service_plan.appserviceplan.id
+  target_resource_id = azurerm_service_plan.appserviceplan.id
 }
 
 # alerts
@@ -81,10 +88,10 @@ module "alerts" {
     )
     enabled             = each.value.enabled
     frequency           = each.value.frequency
-    name                = "${each.value.name} - ${azurerm_app_service_plan.appserviceplan.name}"
+    name                = "${each.value.name} - ${azurerm_service_plan.appserviceplan.name}"
     resource_group_name = var.resource_group_name
     scopes = [
-      azurerm_app_service_plan.appserviceplan.id
+      azurerm_service_plan.appserviceplan.id
     ]
     severity = each.value.severity
     static_criteria = try(

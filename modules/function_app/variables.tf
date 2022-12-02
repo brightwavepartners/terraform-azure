@@ -44,6 +44,7 @@ variable "alert_settings" {
 
 variable "always_on" {
   type        = bool
+  default     = false
   description = "Should the Function App stay loaded all the time?"
 }
 
@@ -54,6 +55,7 @@ variable "app_service_plan_id" {
 
 variable "app_settings" {
   type        = map(string)
+  default     = {}
   description = "Global configuration options that affect all functions for the function app. These are the Application settings found under the Configuration menu of the Function App."
 }
 
@@ -74,6 +76,10 @@ variable "cors_settings" {
       support_credentials = bool
     }
   )
+  default = {
+    allowed_origins = []
+    support_credentials = false
+  }
   description = "Defines settings for origins that should be able to make cross-origin calls."
 }
 
@@ -146,6 +152,10 @@ variable "dotnet_framework_version" {
 variable "functions_runtime_version" {
   type        = string
   description = "The version of the Functions runtime that hosts your function app (https://docs.microsoft.com/en-us/azure/azure-functions/functions-app-settings#functions_extension_version)."
+  validation {
+    condition     = try(index(["~4", "~3", "~2", "~1"], var.functions_runtime_version), -1) >= 0 ? true : false
+    error_message = "Expected functions_runtime_version to be one of [~4 ~3 ~2 ~1], got ${var.functions_runtime_version}."
+  }  
 }
 
 variable "ignore_changes" {
@@ -254,6 +264,7 @@ variable "subnet_id" {
 
 variable "tags" {
   type        = map(string)
+  default     = {}
   description = "String values used to organize resources."
 }
 
@@ -277,6 +288,7 @@ variable "use_32_bit_worker_process" {
 # bool value that is known before apply.
 variable "vnet_integration_enabled" {
   type        = bool
+  default     = false
   description = "Determines if the App Service will be integrated into a virtual network."
 }
 
@@ -289,10 +301,8 @@ variable "vnet_route_all_enabled" {
 variable "worker_runtime_type" {
   type        = string
   description = "The language worker runtime to load in the function app. This corresponds to the language being used in your application. For example, dotnet. (https://docs.microsoft.com/en-us/azure/azure-functions/functions-app-settings#functions_worker_runtime)"
-}
-
-variable "workspace_id" {
-  type        = string
-  default     = null
-  description = "The Azure resource identifier for a Log Analytics Workspace that the Application Insights for the App Service will be attached to."
+  validation {
+    condition     = try(index(["dotnet", "dotnet-isolated", "java", "node", "powershell", "python"], var.worker_runtime_type), -1) >= 0 ? true : false
+    error_message = "Expected worker_runtime_type to be one of [dotnet dotnet-isolated java node powershell python], got ${var.worker_runtime_type}."
+  }  
 }

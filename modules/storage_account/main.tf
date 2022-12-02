@@ -21,12 +21,12 @@ module "globals" {
 
 # storage account
 resource "azurerm_storage_account" "storage_account" {
-  allow_blob_public_access = var.allow_blob_public_access
   account_replication_type = var.account_replication_type
   account_tier             = var.account_tier
   location                 = var.location
   min_tls_version          = "TLS1_2"
   name                     = lower("${module.globals.resource_base_name_short}${substr(var.role, 0, length(module.globals.resource_base_name_short) - 4)}sa") # TODO: object type name should use globals
+  allow_nested_items_to_be_public = var.allow_nested_items_to_be_public
   resource_group_name      = var.resource_group_name
   tags                     = var.tags
 

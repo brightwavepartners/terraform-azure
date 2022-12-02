@@ -29,6 +29,7 @@ variable "sku" {
 
 variable "tags" {
   type        = map(string)
+  default     = null
   description = "String values used to organize resources."
 }
 

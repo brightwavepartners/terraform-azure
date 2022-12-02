@@ -19,7 +19,7 @@ locals {
   application_name_max_length = 3
 
   azure_cdn_service_address_range = "147.243.0.0/16"
-
+  
   # provides consistent short-names for environments. when definining new values in this list,
   # be sure the length does not exceed 'environment_name_max_length' value. otherwise, the
   # automatic derivation of names for 'resource_base_name_long' and 'resource_base_name_short'
