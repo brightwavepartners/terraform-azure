@@ -144,7 +144,31 @@ resource "azurerm_function_app" "function_app" {
   }
 }
 
+# need to get the WEBSITE_CONTENTSHARE that was automatcially set
+# when the function app was provisioned so we can create the
+# file share with the same name in the storage account
+data "azurerm_function_app" "function_app" {
+  name = azurerm_function_app.function_app.name
+  resource_group_name = azurerm_function_app.function_app.resource_group_name
+}
+
+# TODO: this section should only be applied if vnet integration is enabled 
+# storage account file share for application files
+resource "azurerm_storage_share" "application_files_storage_share" {
+    name = data.azurerm_function_app.function_app.app_settings["WEBSITE_CONTENTSHARE"]
+    storage_account_name = module.storage_account.name
+    quota = 50
+}
+
 # TODO: this section should only be applied if vnet integration is enabled
+# ---note---
+# when the function app is provisioned, it will automatically define the
+# 'WEBSITE_CONTENTSHARE' value, which is different from the manually
+# created and named file share. this happens even thought he file share
+# wasn't created in the storage account using the name from 'WEBSITE_CONTENTSHARE'.
+# so, need to go back and update the 'WEBSITE_CONTENTSHARE' value and
+# set it to the name of the file share that was setup earlier with the 
+# azurerm_storage_share.application_files_storage_share resource.
 # # resource "azapi_update_resource" "appsettings_websitecontentfolder" {
 # #   type      = "Microsoft.Web/sites/config@2022-03-01"
 # #   name      = "appsettings"
