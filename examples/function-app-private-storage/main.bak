@@ -1,0 +1,116 @@
+# global naming conventions and resources
+module "globals" {
+  source = "../../modules/globals"
+
+  application = local.application
+  environment = local.environment
+  location    = local.location
+  tenant      = local.tenant
+}
+
+# utilitiies like my ip address
+module "utilities" {
+  source = "../../modules/utilities"
+}
+
+# resource group
+module "resource_group" {
+  source = "../../modules/resource_group"
+
+  application = local.application
+  environment = local.environment
+  location    = local.location
+  tags        = local.tags
+  tenant      = local.tenant
+}
+
+# virtual network
+resource "azurerm_virtual_network" "virtual_network" {
+  location            = module.resource_group.location
+  name                = lower("${module.globals.resource_base_name_long}-${module.globals.role_names.network}-${module.globals.object_type_names.virtual_network}")
+  resource_group_name = module.resource_group.name
+  address_space       = ["10.0.0.0/24"]
+}
+
+# app services subnets
+module "app_service_subnet" {
+  source = "../../modules/subnet"
+
+  address_prefixes                    = ["10.0.0.0/24"]
+  application                         = local.application
+  environment                         = local.environment
+  location                            = local.location
+  name                                = lower("${local.application}-${local.app_service_plan.role}-${local.environment}")
+  resource_group_name                 = module.resource_group.name
+  role                                = local.app_service_plan.role
+  tags                                = local.tags
+  tenant                              = local.tenant
+  virtual_network_name                = azurerm_virtual_network.virtual_network.name
+  virtual_network_resource_group_name = azurerm_virtual_network.virtual_network.resource_group_name
+
+  delegation = {
+    name = "Microsoft.Web.serverFarms"
+
+    service_delegation = {
+      name = "Microsoft.Web/serverFarms"
+
+      actions = [
+        "Microsoft.Network/virtualNetworks/subnets/action"
+      ]
+    }
+  }
+}
+
+# app service plan
+module "app_service_plan" {
+  source = "../../modules/app_service_plan"
+
+  application         = local.application
+  environment         = local.environment
+  kind                = local.app_service_plan.kind
+  location            = local.location
+  resource_group_name = module.resource_group.name
+  role                = local.app_service_plan.role
+  size                = "EP2"
+  tags                = local.tags
+  tier                = "Elastic Tier"
+  tenant              = local.tenant
+}
+
+# function app
+module "function" {
+  source = "../../modules/function_app"
+
+  always_on           = false
+  app_service_plan_id = module.app_service_plan.id
+  app_settings        = {}
+  application         = local.application
+  cors_settings = {
+    allowed_origins = [
+      "https://functions.azure.com",
+      "https://functions-next.azure.com",
+      "https://functions-staging.azure.com"
+    ],
+    support_credentials = false
+  }
+  environment               = local.environment
+  functions_runtime_version = local.function.runtime_version
+  location                  = local.location
+  resource_group_name       = module.resource_group.name
+  role                      = local.function.role
+  storage = {
+    alert_settings = []
+    vnet_integration = {
+      allowed_ips = ["70.97.190.186"]
+      enabled = true
+    }
+  }
+  tags                      = {}
+  tenant                    = local.tenant
+  use_32_bit_worker_process = false
+  vnet_integration = {
+    subnet_id              = module.app_service_subnet.id
+    vnet_route_all_enabled = true
+  }
+  worker_runtime_type = local.function.runtime_type
+}

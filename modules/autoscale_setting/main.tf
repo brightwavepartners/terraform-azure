@@ -65,7 +65,7 @@ resource "azurerm_monitor_autoscale_setting" "autoscale_setting" {
 # auto-scale diagnostics
 module "diagnostic_settings" {
   source = "../diagnostics_settings"
-  
-  settings = var.settings.diagnostics_settings
+
+  settings           = var.settings.diagnostics_settings
   target_resource_id = azurerm_monitor_autoscale_setting.autoscale_setting.id
 }

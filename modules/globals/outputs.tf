@@ -6,8 +6,8 @@
 # variables.
 
 output "application_name_max_length" {
-    value = local.application_name_max_length
-    description = "Defines the maximum short name length for the application identifier."
+  value       = local.application_name_max_length
+  description = "Defines the maximum short name length for the application identifier."
 }
 
 output "azure_cdn_service_address_range" {
@@ -16,8 +16,8 @@ output "azure_cdn_service_address_range" {
 }
 
 output "environment_name_max_length" {
-    value = local.environment_name_max_length
-    description = "Defines the maximum short name length for the environment identifier."
+  value       = local.environment_name_max_length
+  description = "Defines the maximum short name length for the environment identifier."
 }
 
 output "environment_list" {
@@ -51,7 +51,7 @@ output "environment_short_name_uat" {
 }
 
 output "location_name_max_length" {
-  value = local.location_name_max_length
+  value       = local.location_name_max_length
   description = "Defines the maximum short name length for the location identifier."
 }
 
@@ -86,6 +86,6 @@ output "role_names" {
 }
 
 output "tenant_name_max_length" {
-    value = local.tenant_name_max_length
-    description = "Defines the maximum short name length for the tenant identifier."
+  value       = local.tenant_name_max_length
+  description = "Defines the maximum short name length for the tenant identifier."
 }

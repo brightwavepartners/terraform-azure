@@ -27,7 +27,7 @@ resource "azurerm_network_security_group" "network_security_group" {
 # network security group rules
 resource "azurerm_network_security_rule" "network_security_group_rules" {
   for_each = {
-      for rule in var.network_security_group_rules : rule.name => rule
+    for rule in var.network_security_group_rules : rule.name => rule
   }
 
   access                                     = each.value.access

@@ -12,7 +12,7 @@ resource "azurerm_monitor_diagnostic_setting" "diagnostic_setting" {
   target_resource_id = var.target_resource_id
 
   log_analytics_destination_type = try(each.value.destination.log_analytics_workspace.destination_type, null)
-  log_analytics_workspace_id = try(each.value.destination.log_analytics_workspace.id, null)
+  log_analytics_workspace_id     = try(each.value.destination.log_analytics_workspace.id, null)
 
   dynamic "log" {
     for_each = each.value.logs
@@ -39,5 +39,5 @@ resource "azurerm_monitor_diagnostic_setting" "diagnostic_setting" {
         enabled = metric.value["retention"].enabled
       }
     }
-  }  
+  }
 }

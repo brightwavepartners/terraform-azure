@@ -5,11 +5,28 @@ terraform {
 locals {
   # default app settings are those that are always the same for every function app created
   default_app_settings = {
-    "APPINSIGHTS_INSTRUMENTATIONKEY"        = azurerm_application_insights.application_insights.instrumentation_key
-    "APPLICATIONINSIGHTS_CONNECTION_STRING" = "InstrumentationKey=${azurerm_application_insights.application_insights.instrumentation_key};IngestionEndpoint=https://${var.location}-0.in.applicationinsights.azure.com/"
-    "FUNCTIONS_WORKER_RUNTIME"              = var.worker_runtime_type
+    "APPINSIGHTS_INSTRUMENTATIONKEY"           = azurerm_application_insights.application_insights.instrumentation_key
+    "APPLICATIONINSIGHTS_CONNECTION_STRING"    = "InstrumentationKey=${azurerm_application_insights.application_insights.instrumentation_key};IngestionEndpoint=https://${var.location}-0.in.applicationinsights.azure.com/"
+    "FUNCTIONS_WORKER_RUNTIME"                 = var.worker_runtime_type
+    
+    #"WEBSITE_CONTENTAZUREFILECONNECTIONSTRING" = module.storage_account.primary_connection_string
+    
+    # this setting is required if storage account is vnet integrated
+    "WEBSITE_CONTENTOVERVNET"                  = var.storage == null ? 0 : var.storage.vnet_integration.enabled ? 1 : 0
+    
+    #"WEBSITE_CONTENTSHARE"                     = local.function_app_website_content_folder_name
   }
-  metric_namespace = "Microsoft.Web/sites"
+  function_app_website_content_folder_name = "application-files"
+  metric_namespace                         = "Microsoft.Web/sites"
+  # the runtime version is being hardcoded in this module because there are some features
+  # being used by this code that are only available in versions >= ~4. if the client code
+  # is allowed to set this version, it may end up being a lower version that doesn't support
+  # the features needed and things won't work.
+  runtime_version = "~4"
+
+  vnet_integrated_function_route_all_enabled = try(var.vnet_integration.vnet_route_all_enabled, null)
+  vnet_integrated_function_subnet_id         = try(var.vnet_integration.subnet_id, null)
+  vnet_integrated_storage_allowed_ips        = try(var.storage.vnet_integration.allowed_ips, null)
 }
 
 # global naming conventions and resources
@@ -39,30 +56,24 @@ module "storage_account" {
   account_replication_type = "LRS"
   account_tier             = "Standard"
   application              = var.application
+  alert_settings           = try(var.storage.alert_settings, [])
+  allowed_ips              = local.vnet_integrated_storage_allowed_ips
   environment              = var.environment
   location                 = var.location
   role                     = var.role
   resource_group_name      = var.resource_group_name
+  subnet_ids               = var.storage == null ? null : var.storage.vnet_integration.enabled ? [var.vnet_integration.subnet_id] : null
   tags                     = var.tags
   tenant                   = var.tenant
-
-  alert_settings = [
-    for alert_setting in var.storage_account_alert_settings :
-    {
-      action = {
-        action_group_id = alert_setting.action.action_group_id
-      }
-      description      = alert_setting.description
-      dynamic_criteria = try(alert_setting.dynamic_criteria, null)
-      enabled          = alert_setting.enabled
-      frequency        = alert_setting.frequency
-      name             = alert_setting.name
-      severity         = alert_setting.severity
-      static_criteria  = try(alert_setting.static_criteria, null)
-      window_size      = alert_setting.window_size
-    }
-  ]
 }
+
+# TODO: this section should only be applied if vnet integration is enabled 
+# storage account file share for application files
+# # resource "azurerm_storage_share" "application_files_storage_share" {
+# #     name = local.function_app_website_content_folder_name
+# #     storage_account_name = module.storage_account.name
+# #     quota = 50
+# # }
 
 # azure function
 resource "azurerm_function_app" "function_app" {
@@ -108,6 +119,7 @@ resource "azurerm_function_app" "function_app" {
     }
 
     dotnet_framework_version = var.dotnet_framework_version
+    elastic_instance_minimum = var.minimum_instance_count
     ftps_state               = "FtpsOnly"
 
     # we are doing the ip_restriction attribute via a for loop instead of dynamic block because
@@ -128,16 +140,28 @@ resource "azurerm_function_app" "function_app" {
     ]
 
     use_32_bit_worker_process = var.use_32_bit_worker_process
-    vnet_route_all_enabled    = var.vnet_route_all_enabled
+    vnet_route_all_enabled    = local.vnet_integrated_function_route_all_enabled
   }
 }
 
+# TODO: this section should only be applied if vnet integration is enabled
+# # resource "azapi_update_resource" "appsettings_websitecontentfolder" {
+# #   type      = "Microsoft.Web/sites/config@2022-03-01"
+# #   name      = "appsettings"
+# #   parent_id = azurerm_function_app.function_app.id
+
+# #   body = jsonencode({
+# #     properties = local.default_app_settings
+# #   })
+# #   response_export_values = ["*"]
+# # }
+
 # vnet integration for function app - if enabled
 resource "azurerm_app_service_virtual_network_swift_connection" "vnet_integration" {
-  count = var.vnet_integration_enabled ? 1 : 0
+  count = var.vnet_integration != null ? 1 : 0
 
   app_service_id = azurerm_function_app.function_app.id
-  subnet_id      = var.subnet_id
+  subnet_id      = local.vnet_integrated_function_subnet_id
 
   timeouts {
     create = "1h"

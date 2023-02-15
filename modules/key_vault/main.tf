@@ -3,7 +3,7 @@ terraform {
 }
 
 locals {
-    metric_namespace = "Microsoft.KeyVault/vaults"
+  metric_namespace = "Microsoft.KeyVault/vaults"
 }
 
 # global naming conventions and resources

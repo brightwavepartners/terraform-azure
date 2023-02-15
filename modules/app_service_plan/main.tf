@@ -5,7 +5,7 @@ terraform {
 locals {
   app_service_plan_name               = lower("${module.globals.resource_base_name_long}-${var.role}-${module.globals.object_type_names.app_service_plan}")
   assert_app_service_plan_name_length = length(local.app_service_plan_name) > module.globals.resource_name_max_length.app_service_plan ? file("ERROR: App Service Plan name ${local.app_service_plan_name} exceeds maximum length of ${module.globals.resource_name_max_length.app_service_plan}") : null
-  
+
   # there is a setting for elastic app service plans called 'maximum_elastic_worker_count'
   # that can be set to define the macimum number of workers when scaling the plan. that
   # setting is only valid on elastic app service plans and if we try to set it when the
@@ -15,7 +15,7 @@ locals {
   # not. if it is, go ahead and set the worker count value. if the desired plan is not
   # elastic, do not attempt to set the worker count value to prevent an error.
   is_elastic_plan = try(index(["EP1", "EP2", "EP3"], var.sku_name), -1) >= 0 ? true : false
-  
+
   metric_namespace = "Microsoft.Web/serverFarms"
 }
 
@@ -45,14 +45,14 @@ module "appserviceplan_autoscale" {
   source = "../autoscale_setting"
 
   for_each = {
-      for scale_setting in var.scale_settings : scale_setting.name => scale_setting
+    for scale_setting in var.scale_settings : scale_setting.name => scale_setting
   }
 
   app_service_plan_id = azurerm_service_plan.appserviceplan.id
-  location = var.location
+  location            = var.location
   resource_group_name = var.resource_group_name
-  settings = each.value
-  tags = var.tags
+  settings            = each.value
+  tags                = var.tags
 }
 
 # diagnostics settings
