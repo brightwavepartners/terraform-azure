@@ -5,19 +5,16 @@ terraform {
 locals {
   # default app settings are those that are always the same for every function app created
   default_app_settings = {
-    "APPINSIGHTS_INSTRUMENTATIONKEY"           = azurerm_application_insights.application_insights.instrumentation_key
-    "APPLICATIONINSIGHTS_CONNECTION_STRING"    = "InstrumentationKey=${azurerm_application_insights.application_insights.instrumentation_key};IngestionEndpoint=https://${var.location}-0.in.applicationinsights.azure.com/"
-    "FUNCTIONS_WORKER_RUNTIME"                 = var.worker_runtime_type
-    
-    #"WEBSITE_CONTENTAZUREFILECONNECTIONSTRING" = module.storage_account.primary_connection_string
-    
-    # this setting is required if storage account is vnet integrated
-    "WEBSITE_CONTENTOVERVNET"                  = var.storage == null ? 0 : var.storage.vnet_integration.enabled ? 1 : 0
-    
-    #"WEBSITE_CONTENTSHARE"                     = local.function_app_website_content_folder_name
+    "APPINSIGHTS_INSTRUMENTATIONKEY"        = azurerm_application_insights.application_insights.instrumentation_key
+    "APPLICATIONINSIGHTS_CONNECTION_STRING" = "InstrumentationKey=${azurerm_application_insights.application_insights.instrumentation_key};IngestionEndpoint=https://${var.location}-0.in.applicationinsights.azure.com/"
+    "FUNCTIONS_WORKER_RUNTIME"              = var.worker_runtime_type
+    "WEBSITE_CONTENTOVERVNET"               = var.storage == null ? 0 : var.storage.vnet_integration.enabled ? 1 : 0
   }
-  function_app_website_content_folder_name = "application-files"
-  metric_namespace                         = "Microsoft.Web/sites"
+
+  function_app_file_share_application_setting_key = "WEBSITE_CONTENTSHARE"
+
+  metric_namespace = "Microsoft.Web/sites"
+
   # the runtime version is being hardcoded in this module because there are some features
   # being used by this code that are only available in versions >= ~4. if the client code
   # is allowed to set this version, it may end up being a lower version that doesn't support
@@ -27,6 +24,7 @@ locals {
   vnet_integrated_function_route_all_enabled = try(var.vnet_integration.vnet_route_all_enabled, null)
   vnet_integrated_function_subnet_id         = try(var.vnet_integration.subnet_id, null)
   vnet_integrated_storage_allowed_ips        = try(var.storage.vnet_integration.allowed_ips, null)
+  vnet_integrated_storage_enabled            = try(var.storage.vnet_integration.enabled, false)
 }
 
 # global naming conventions and resources
@@ -66,14 +64,6 @@ module "storage_account" {
   tags                     = var.tags
   tenant                   = var.tenant
 }
-
-# TODO: this section should only be applied if vnet integration is enabled 
-# storage account file share for application files
-# # resource "azurerm_storage_share" "application_files_storage_share" {
-# #     name = local.function_app_website_content_folder_name
-# #     storage_account_name = module.storage_account.name
-# #     quota = 50
-# # }
 
 # azure function
 resource "azurerm_function_app" "function_app" {
@@ -144,43 +134,52 @@ resource "azurerm_function_app" "function_app" {
   }
 }
 
-# need to get the WEBSITE_CONTENTSHARE that was automatcially set
-# when the function app was provisioned so we can create the
-# file share with the same name in the storage account
+# during normal function app provisioning, a file share is automatically
+# created in the storage account that is associated with the function app
+# to hold the function app's code files. the name of that file share
+# is automatically generated during provisioning and that automatically
+# generated name will be added to the function app's application settings
+# as the value of the WEBSITE_CONTENTSHARE setting. that is how the connection
+# is made between the function app and its associated storage account.
+#
+# now, if the storage account associated with the function app is vnet
+# integrated, the file share name will still get automatically generated
+# and added to the function app's application settings, but the file share
+# will not get provisioned automatically in the storage account (presumably
+# due to access restrictions caused by vnet integration) thus causing the
+# function app to fail to function properly since it cannot access its own
+# code files from a file share that never got provisioned.
+#
+# since the file share name was already automatically generated and added
+# to the function app's application settings, we can fix the missing file
+# share issue by using a data source to get name of the file share that
+# was added to the application settings and then creating the missing
+# file share in the storage account using the name that was already
+# automatically generated and added to the application settings.
+
+# data source to get all the function app's application settings
+# -- only need this if storage account is vnet integrated
 data "azurerm_function_app" "function_app" {
-  name = azurerm_function_app.function_app.name
+  count = local.vnet_integrated_storage_enabled ? 1 : 0
+
+  name                = azurerm_function_app.function_app.name
   resource_group_name = azurerm_function_app.function_app.resource_group_name
 }
 
-# TODO: this section should only be applied if vnet integration is enabled 
-# storage account file share for application files
+# storage account file share for function app application files
+# using the already generated name that we retrieved with the
+# data source above
+# -- only need this if storage account is vnet integrated
 resource "azurerm_storage_share" "application_files_storage_share" {
-    name = data.azurerm_function_app.function_app.app_settings["WEBSITE_CONTENTSHARE"]
-    storage_account_name = module.storage_account.name
-    quota = 50
+  count = local.vnet_integrated_storage_enabled  ? 1 : 0
+
+  name                 = data.azurerm_function_app.function_app[0].app_settings[local.function_app_file_share_application_setting_key]
+  storage_account_name = module.storage_account.name
+  quota                = 50
 }
 
-# TODO: this section should only be applied if vnet integration is enabled
-# ---note---
-# when the function app is provisioned, it will automatically define the
-# 'WEBSITE_CONTENTSHARE' value, which is different from the manually
-# created and named file share. this happens even thought he file share
-# wasn't created in the storage account using the name from 'WEBSITE_CONTENTSHARE'.
-# so, need to go back and update the 'WEBSITE_CONTENTSHARE' value and
-# set it to the name of the file share that was setup earlier with the 
-# azurerm_storage_share.application_files_storage_share resource.
-# # resource "azapi_update_resource" "appsettings_websitecontentfolder" {
-# #   type      = "Microsoft.Web/sites/config@2022-03-01"
-# #   name      = "appsettings"
-# #   parent_id = azurerm_function_app.function_app.id
-
-# #   body = jsonencode({
-# #     properties = local.default_app_settings
-# #   })
-# #   response_export_values = ["*"]
-# # }
-
-# vnet integration for function app - if enabled
+# vnet integration for function app
+# -- only need this if function app is vnet integrated
 resource "azurerm_app_service_virtual_network_swift_connection" "vnet_integration" {
   count = var.vnet_integration != null ? 1 : 0
 
