@@ -8,6 +8,7 @@ This directory contains documentation about how the IaC is setup and used.
 
 ## Modules
 - [Overview and Layout](./module_overview_and_layout.md)
+- [Function App](./function_app/README.md)
 
 ## Pipelines
 - [Azure Devops - YAML pipelines and branching strategies](pipelines.md)

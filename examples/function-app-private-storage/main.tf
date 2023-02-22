@@ -104,13 +104,13 @@ module "functions" {
   location                  = local.location
   resource_group_name       = module.resource_group.name
   role                      = local.function.role
-  # # storage = {
-  # #   alert_settings = []
-  # #   vnet_integration = {
-  # #     allowed_ips = [module.utilities.ip]
-  # #     enabled = true
-  # #   }
-  # # }
+  storage = {
+    alert_settings = []
+    vnet_integration = {
+      allowed_ips = [module.utilities.ip]
+      enabled = true
+    }
+  }
   tags                      = local.tags
   tenant                    = local.tenant
   use_32_bit_worker_process = false
