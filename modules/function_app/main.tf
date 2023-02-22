@@ -8,8 +8,23 @@ locals {
     "APPINSIGHTS_INSTRUMENTATIONKEY"        = azurerm_application_insights.application_insights.instrumentation_key
     "APPLICATIONINSIGHTS_CONNECTION_STRING" = "InstrumentationKey=${azurerm_application_insights.application_insights.instrumentation_key};IngestionEndpoint=https://${var.location}-0.in.applicationinsights.azure.com/"
     "FUNCTIONS_WORKER_RUNTIME"              = var.worker_runtime_type
+    "WEBSITE_CONTENTOVERVNET"               = var.storage == null ? 0 : var.storage.vnet_integration.enabled ? 1 : 0
   }
+
+  function_app_file_share_application_setting_key = "WEBSITE_CONTENTSHARE"
+
   metric_namespace = "Microsoft.Web/sites"
+
+  # the runtime version is being hardcoded in this module because there are some features
+  # being used by this code that are only available in versions >= ~4. if the client code
+  # is allowed to set this version, it may end up being a lower version that doesn't support
+  # the features needed and things won't work.
+  runtime_version = "~4"
+
+  vnet_integrated_function_route_all_enabled = try(var.vnet_integration.vnet_route_all_enabled, null)
+  vnet_integrated_function_subnet_id         = try(var.vnet_integration.subnet_id, null)
+  vnet_integrated_storage_allowed_ips        = try(var.storage.vnet_integration.allowed_ips, null)
+  vnet_integrated_storage_enabled            = try(var.storage.vnet_integration.enabled, false)
 }
 
 # global naming conventions and resources
@@ -39,29 +54,15 @@ module "storage_account" {
   account_replication_type = "LRS"
   account_tier             = "Standard"
   application              = var.application
+  alert_settings           = try(var.storage.alert_settings, [])
+  allowed_ips              = local.vnet_integrated_storage_allowed_ips
   environment              = var.environment
   location                 = var.location
   role                     = var.role
   resource_group_name      = var.resource_group_name
+  subnet_ids               = var.storage == null ? null : var.storage.vnet_integration.enabled ? [var.vnet_integration.subnet_id] : null
   tags                     = var.tags
   tenant                   = var.tenant
-
-  alert_settings = [
-    for alert_setting in var.storage_account_alert_settings :
-    {
-      action = {
-        action_group_id = alert_setting.action.action_group_id
-      }
-      description      = alert_setting.description
-      dynamic_criteria = try(alert_setting.dynamic_criteria, null)
-      enabled          = alert_setting.enabled
-      frequency        = alert_setting.frequency
-      name             = alert_setting.name
-      severity         = alert_setting.severity
-      static_criteria  = try(alert_setting.static_criteria, null)
-      window_size      = alert_setting.window_size
-    }
-  ]
 }
 
 # azure function
@@ -108,6 +109,7 @@ resource "azurerm_function_app" "function_app" {
     }
 
     dotnet_framework_version = var.dotnet_framework_version
+    elastic_instance_minimum = var.minimum_instance_count
     ftps_state               = "FtpsOnly"
 
     # we are doing the ip_restriction attribute via a for loop instead of dynamic block because
@@ -128,16 +130,61 @@ resource "azurerm_function_app" "function_app" {
     ]
 
     use_32_bit_worker_process = var.use_32_bit_worker_process
-    vnet_route_all_enabled    = var.vnet_route_all_enabled
+    vnet_route_all_enabled    = local.vnet_integrated_function_route_all_enabled
   }
 }
 
-# vnet integration for function app - if enabled
+# during normal function app provisioning, a file share is automatically
+# created in the storage account that is associated with the function app
+# to hold the function app's code files. the name of that file share
+# is automatically generated during provisioning and that automatically
+# generated name will be added to the function app's application settings
+# as the value of the WEBSITE_CONTENTSHARE setting. that is how the connection
+# is made between the function app and its associated storage account.
+#
+# now, if the storage account associated with the function app is vnet
+# integrated, the file share name will still get automatically generated
+# and added to the function app's application settings, but the file share
+# will not get provisioned automatically in the storage account (presumably
+# due to access restrictions caused by vnet integration) thus causing the
+# function app to fail to function properly since it cannot access its own
+# code files from a file share that never got provisioned.
+#
+# since the file share name was already automatically generated and added
+# to the function app's application settings, we can fix the missing file
+# share issue by using a data source to get name of the file share that
+# was added to the application settings and then creating the missing
+# file share in the storage account using the name that was already
+# automatically generated and added to the application settings.
+
+# data source to get all the function app's application settings
+# -- only need this if storage account is vnet integrated
+data "azurerm_function_app" "function_app" {
+  count = local.vnet_integrated_storage_enabled ? 1 : 0
+
+  name                = azurerm_function_app.function_app.name
+  resource_group_name = azurerm_function_app.function_app.resource_group_name
+}
+
+# storage account file share for function app application files
+# using the already generated name that we retrieved with the
+# data source above
+# -- only need this if storage account is vnet integrated
+resource "azurerm_storage_share" "application_files_storage_share" {
+  count = local.vnet_integrated_storage_enabled  ? 1 : 0
+
+  name                 = data.azurerm_function_app.function_app[0].app_settings[local.function_app_file_share_application_setting_key]
+  storage_account_name = module.storage_account.name
+  quota                = 50
+}
+
+# vnet integration for function app
+# -- only need this if function app is vnet integrated
 resource "azurerm_app_service_virtual_network_swift_connection" "vnet_integration" {
-  count = var.vnet_integration_enabled ? 1 : 0
+  count = var.vnet_integration != null ? 1 : 0
 
   app_service_id = azurerm_function_app.function_app.id
-  subnet_id      = var.subnet_id
+  subnet_id      = local.vnet_integrated_function_subnet_id
 
   timeouts {
     create = "1h"

@@ -65,8 +65,8 @@ variable "application" {
 }
 
 variable "application_insights_enabled" {
-  type = bool
-  default = false
+  type        = bool
+  default     = false
   description = "Determines if Application Insights will be enabled for the App Service."
 }
 
@@ -77,7 +77,7 @@ variable "cors_settings" {
       support_credentials = bool
     }
   )
-  default = null
+  default     = null
   description = "Defines settings for origins that should be able to make cross-origin calls."
 }
 
@@ -188,8 +188,8 @@ variable "log_analytics_workspace_id" {
 }
 
 variable "name" {
-  type = string
-  default = null
+  type        = string
+  default     = null
   description = "The name to give to the App Service. If no name is provided, a default name will be used based on the global azure naming convention of this library."
 }
 

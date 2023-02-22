@@ -3,7 +3,7 @@ terraform {
 }
 
 locals {
-    metric_namespace = "Microsoft.DataFactory/factories"
+  metric_namespace = "Microsoft.DataFactory/factories"
 }
 
 # global naming conventions and resources
@@ -30,12 +30,12 @@ resource "azurerm_data_factory" "data_factory" {
     for_each = var.vsts_configuration == null ? [] : [1]
 
     content {
-      account_name = var.vsts_configuration.account_name
-      branch_name = var.vsts_configuration.branch_name
-      project_name = var.vsts_configuration.project_name
+      account_name    = var.vsts_configuration.account_name
+      branch_name     = var.vsts_configuration.branch_name
+      project_name    = var.vsts_configuration.project_name
       repository_name = var.vsts_configuration.repository_name
-      root_folder = var.vsts_configuration.root_folder
-      tenant_id = data.azurerm_client_config.current.tenant_id
+      root_folder     = var.vsts_configuration.root_folder
+      tenant_id       = data.azurerm_client_config.current.tenant_id
     }
   }
 

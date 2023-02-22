@@ -8,7 +8,7 @@ terraform {
 
 locals {
   arm_template_filename = "azuredeploy.json"
-  metric_namespace = "Microsoft.Cdn/profiles"
+  metric_namespace      = "Microsoft.Cdn/profiles"
   originConfiguration = {
     originGroups = [
       {

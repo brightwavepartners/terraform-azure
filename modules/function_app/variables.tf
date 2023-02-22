@@ -77,7 +77,7 @@ variable "cors_settings" {
     }
   )
   default = {
-    allowed_origins = []
+    allowed_origins     = []
     support_credentials = false
   }
   description = "Defines settings for origins that should be able to make cross-origin calls."
@@ -152,15 +152,6 @@ variable "dotnet_framework_version" {
 variable "functions_runtime_version" {
   type        = string
   description = "The version of the Functions runtime that hosts your function app (https://docs.microsoft.com/en-us/azure/azure-functions/functions-app-settings#functions_extension_version)."
-  validation {
-    condition     = try(index(["~4", "~3", "~2", "~1"], var.functions_runtime_version), -1) >= 0 ? true : false
-    error_message = "Expected functions_runtime_version to be one of [~4 ~3 ~2 ~1], got ${var.functions_runtime_version}."
-  }  
-}
-
-variable "ignore_changes" {
-  type    = list(string)
-  default = null
 }
 
 variable "ip_restrictions" {
@@ -202,6 +193,12 @@ variable "location" {
   description = "The Azure region where the function app will be deployed."
 }
 
+variable "minimum_instance_count" {
+  type = number
+  default = 1
+  description = "The minimum number of instances. Only affects apps on the Premium plan."
+}
+
 variable "resource_group_name" {
   type        = string
   description = "The name of the resource group in which the Function App will be created."
@@ -212,10 +209,10 @@ variable "role" {
   description = "Defines a role name for the Function App so it can be referred to by this name when attaching to an App Service Plan."
 }
 
-variable "storage_account_alert_settings" {
-  type = list(
-    object(
-      {
+variable "storage" {
+  type = object(
+    {
+      alert_settings = list(object({
         action = object(
           {
             action_group_id = string
@@ -249,11 +246,18 @@ variable "storage_account_alert_settings" {
           )
         )
         window_size = optional(string)
-      }
-    )
+        }
+      )),
+      vnet_integration = object(
+        {
+          allowed_ips = optional(list(string))
+          enabled     = bool
+        }
+      )
+    }
   )
-  default     = []
-  description = "Defines alert settings for the storage account attached to the Function App."
+  default     = null
+  description = "Determines how to configure the storage account backing the Function App."
 }
 
 variable "subnet_id" {
@@ -279,30 +283,19 @@ variable "use_32_bit_worker_process" {
   description = "If the Function App should run in 32 bit mode, rather than 64 bit mode."
 }
 
-# we could trigger vnet integration based on whether a valid subnet_id is passed or not.
-# this would typically be done using a for_each or count on the value of the subnet_id and
-# simply not create the vnet integration if it is null or empty. unfortunately, in some cases
-# the subnet_id would not be known until after an apply operation so terraform would give an error
-# like 'The "count" value depends on resource attributes that cannot be determined until apply'.
-# to get around that issue, this flag is used to trigger vnet integration because it is a simple
-# bool value that is known before apply.
-variable "vnet_integration_enabled" {
-  type        = bool
-  default     = false
-  description = "Determines if the App Service will be integrated into a virtual network."
+variable "vnet_integration" {
+  type = object(
+    {
+      subnet_id              = string
+      vnet_route_all_enabled = bool
+    }
+  )
+  default     = null
+  description = "Describes how to apply virtual network integration to the Function App and its components."
 }
 
-variable "vnet_route_all_enabled" {
-  type        = bool
-  default     = true
-  description = "Apply network security group rules and user defined routes to all outbound function app traffic."
-}
 
 variable "worker_runtime_type" {
   type        = string
   description = "The language worker runtime to load in the function app. This corresponds to the language being used in your application. For example, dotnet. (https://docs.microsoft.com/en-us/azure/azure-functions/functions-app-settings#functions_worker_runtime)"
-  validation {
-    condition     = try(index(["dotnet", "dotnet-isolated", "java", "node", "powershell", "python"], var.worker_runtime_type), -1) >= 0 ? true : false
-    error_message = "Expected worker_runtime_type to be one of [dotnet dotnet-isolated java node powershell python], got ${var.worker_runtime_type}."
-  }  
 }

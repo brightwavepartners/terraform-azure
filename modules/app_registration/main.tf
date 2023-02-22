@@ -127,7 +127,7 @@ data "azurerm_key_vault_certificate" "existing_keyvault_auth_certificate" {
     certificate.name => certificate
   }
 
-  name = each.value.name
+  name         = each.value.name
   key_vault_id = var.key_vault_id
 }
 
@@ -170,37 +170,37 @@ resource "azurerm_key_vault_certificate" "keyvault_auth_certificate" {
         content_type = each.value.certificate_policy.secret_properties.content_type
       }
       x509_certificate_properties {
-        key_usage = each.value.certificate_policy.x509_certificate_properties.key_usage
+        key_usage          = each.value.certificate_policy.x509_certificate_properties.key_usage
         subject            = each.value.certificate_policy.x509_certificate_properties.subject
         validity_in_months = each.value.certificate_policy.x509_certificate_properties.validity_in_months
       }
 
       dynamic "lifetime_action" {
-          for_each = each.value.certificate_policy.lifetime_action == null ? [] : [1]
+        for_each = each.value.certificate_policy.lifetime_action == null ? [] : [1]
 
-          content {
-              action {
-                  action_type = each.value.certificate_policy.lifetime_action.action.action_type
-              }
-
-              # the trigger block can contain either a value based on days or percentage. two dynamic
-              # blocks are used to apply whichever one was defined.
-              dynamic "trigger" {
-                  for_each = each.value.certificate_policy.lifetime_action.trigger.days_before_expiry == null ? [] : [1]
-
-                  content {
-                      days_before_expiry = each.value.certificate_policy.lifetime_action.trigger.days_before_expiry
-                  }
-              }
-
-              dynamic "trigger" {
-                  for_each = each.value.certificate_policy.lifetime_action.trigger.lifetime_percentage == null ? [] : [1]
-
-                  content {
-                      lifetime_percentage = each.value.certificate_policy.lifetime_action.trigger.lifetime_percentage
-                  }
-              }
+        content {
+          action {
+            action_type = each.value.certificate_policy.lifetime_action.action.action_type
           }
+
+          # the trigger block can contain either a value based on days or percentage. two dynamic
+          # blocks are used to apply whichever one was defined.
+          dynamic "trigger" {
+            for_each = each.value.certificate_policy.lifetime_action.trigger.days_before_expiry == null ? [] : [1]
+
+            content {
+              days_before_expiry = each.value.certificate_policy.lifetime_action.trigger.days_before_expiry
+            }
+          }
+
+          dynamic "trigger" {
+            for_each = each.value.certificate_policy.lifetime_action.trigger.lifetime_percentage == null ? [] : [1]
+
+            content {
+              lifetime_percentage = each.value.certificate_policy.lifetime_action.trigger.lifetime_percentage
+            }
+          }
+        }
       }
     }
   }

@@ -237,7 +237,7 @@ module "sqlmi_secondary" {
 
   allow_public_access         = var.allow_public_access
   application                 = var.application
-  diagnostics_settings        = var.diagnostics_settings  
+  diagnostics_settings        = var.diagnostics_settings
   environment                 = var.environment
   keyvault_id                 = var.keyvault_id
   location                    = var.managed_instance_properties.secondary.location

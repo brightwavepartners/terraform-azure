@@ -123,10 +123,6 @@ variable "os_type" {
   type        = string
   default     = "Windows"
   description = "The kind of App Service Plan to create."
-  validation {
-    condition     = try(index(["Linux", "Windows", "WindowsContainer"], var.os_type), -1) >= 0 ? true : false
-    error_message = "Expected sku to be one of [Linux Windows WindowsContainer], got ${var.os_type}."
-  }
 }
 
 variable "resource_group_name" {
@@ -247,40 +243,8 @@ variable "scale_settings" {
 }
 
 variable "sku_name" {
-  type = string
+  type        = string
   description = "The SKU for the plan."
-  validation {
-    condition     = try(index([
-      "B1",
-      "B2",
-      "B3",
-      "D1",
-      "F1",
-      "I1",
-      "I2",
-      "I3",
-      "I1v2",
-      "I2v2",
-      "I3v2",
-      "P1v2",
-      "P2v2",
-      "P3v2",
-      "P1v3",
-      "P2v3",
-      "P3v3",
-      "S1",
-      "S2",
-      "S3",
-      "SHARED",
-      "EP1",
-      "EP2",
-      "EP3",
-      "WS1",
-      "WS2",
-      "WS3",
-      "Y1"], var.sku_name), -1) >= 0 ? true : false
-    error_message = "Expected sku_name to be one of [B1 B2 B3 D1 F1 I1 I2 I3 I1v2 I2v2 I3v2 P1v2 P2v2 P3v2 P1v3 P2v3 P3v3 S1 S2 S3 SHARED EP1 EP2 EP3 WS1 WS2 WS3 Y1], got ${var.sku_name}."
-  }  
 }
 
 variable "tags" {
