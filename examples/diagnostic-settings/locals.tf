@@ -4,10 +4,8 @@ locals {
     role      = "appone"
   }
   app_service_plan = {
-    kind = "Windows"
     role = "apps1"
-    size = "F1"
-    tier = "Free"
+    sku_name = "P1v3"
   }
   application = "diagnostics"
   environment = "loc"

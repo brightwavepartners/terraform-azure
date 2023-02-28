@@ -41,12 +41,10 @@ module "app_service_plan" {
 
   application         = local.application
   environment         = local.environment
-  kind                = local.app_service_plan.kind
   location            = local.location
   resource_group_name = module.resource_group.name
   role                = local.app_service_plan.role
-  size                = local.app_service_plan.size
-  tier                = local.app_service_plan.tier
+  sku_name            = local.app_service_plan.sku_name 
   tags                = local.tags
   tenant              = local.tenant
 }

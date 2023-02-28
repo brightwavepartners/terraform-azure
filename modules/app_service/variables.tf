@@ -64,10 +64,16 @@ variable "application" {
   description = "The name of the application that this infrastructure is being provisioned for."
 }
 
-variable "application_insights_enabled" {
-  type        = bool
-  default     = false
-  description = "Determines if Application Insights will be enabled for the App Service."
+variable "application_insights" {
+  type = object(
+    {
+      enabled                        = bool
+      integrate_with_app_diagnostics = optional(bool)
+      workspace_id                   = optional(string)
+    }
+  )
+  default     = null
+  description = "Determines if Application Insights will be enabled for the App Service along with how it should be configured."
 }
 
 variable "cors_settings" {
@@ -181,12 +187,6 @@ variable "location" {
   description = "The Azure region where the app service will be deployed."
 }
 
-variable "log_analytics_workspace_id" {
-  type        = string
-  default     = null
-  description = "The Azure resource identifier for a Log Analytics Workspace that Application Insight instances will be attached to."
-}
-
 variable "name" {
   type        = string
   default     = null
@@ -242,10 +242,4 @@ variable "vnet_route_all_enabled" {
   type        = bool
   default     = true
   description = "Apply network security group rules and user defined routes to all outbound function app traffic."
-}
-
-variable "workspace_id" {
-  type        = string
-  default     = null
-  description = "The Azure resource identifier for a Log Analytics Workspace that the Application Insights for the App Service will be attached to."
 }

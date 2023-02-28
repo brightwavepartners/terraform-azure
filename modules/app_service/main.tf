@@ -12,15 +12,6 @@ locals {
   default_app_settings = {
     "APPINSIGHTS_INSTRUMENTATIONKEY"                  = azurerm_application_insights.application_insights.instrumentation_key
     "APPLICATIONINSIGHTS_CONNECTION_STRING"           = "InstrumentationKey=${azurerm_application_insights.application_insights.instrumentation_key}"
-    "ApplicationInsightsAgent_EXTENSION_VERSION"      = "~3"
-    "XDT_MicrosoftApplicationInsights_Mode"           = "recommended"
-    "APPINSIGHTS_PROFILERFEATURE_VERSION"             = "disabled"
-    "APPINSIGHTS_SNAPSHOTFEATURE_VERSION"             = "disabled"
-    "DiagnosticServices_EXTENSION_VERSION"            = "disabled"
-    "InstrumentationEngine_EXTENSION_VERSION"         = "~1"
-    "SnapshotDebugger_EXTENSION_VERSION"              = "disabled"
-    "XDT_MicrosoftApplicationInsights_BaseExtensions" = "~1"
-    "XDT_MicrosoftApplicationInsights_PreemptSdk"     = "disabled"
   }
 
   # the microsoft given namespace for app service metrics, used in diagnostics settings
@@ -42,58 +33,14 @@ module "globals" {
 
 # create an application insights instance that will be connected to the app service
 resource "azurerm_application_insights" "application_insights" {
+  count = var.application_insights.enabled ? 1 : 0
+
   application_type    = "web"
   location            = var.location
   name                = lower("${module.globals.resource_base_name_long}-${var.role}-${module.globals.object_type_names.application_insights}")
   resource_group_name = var.resource_group_name
   tags                = var.tags
-  workspace_id        = var.log_analytics_workspace_id
-}
-
-# application insights api key for app service diagnostics
-resource "azurerm_application_insights_api_key" "read_telemetry" {
-  name                    = "APPSERVICEDIAGNOSTICS_READONLYKEY_${local.app_service_name}"
-  application_insights_id = azurerm_application_insights.application_insights.id
-  read_permissions        = ["agentconfig", "aggregate", "api", "draft", "extendqueries", "search"]
-}
-
-# get token from the service principal so we can use the token in the rest call to the azure encryption engine
-resource "null_resource" "application_insights_app_service_diagnostics" {
-  provisioner "local-exec" {
-    command = <<EOT
-            $password = ConvertTo-SecureString -String $env:ARM_CLIENT_SECRET -AsPlainText -Force
-            $Credential = New-Object -TypeName System.Management.Automation.PSCredential ($env:ARM_CLIENT_ID, $password)
-            Connect-AzAccount -ServicePrincipal -TenantId $env:ARM_TENANT_ID -Credential $Credential
-
-            $token = Get-AzAccessToken
-            $token.Token | Out-File '${path.root}/token.txt'
-        EOT
-
-    interpreter = [
-      "pwsh",
-      "-Command"
-    ]
-  }
-}
-
-# access to the token file
-data "local_file" "token" {
-  filename = "${path.root}/token.txt"
-
-  depends_on = [
-    null_resource.application_insights_app_service_diagnostics
-  ]
-}
-
-# encrypt the api key
-data "http" "encrypted_ai_api_key" {
-  url = "https://appservice-diagnostics.azurefd.net/api/appinsights/encryptkey"
-
-  request_headers = {
-    Authorization   = "Bearer ${data.local_file.token.content_base64}"
-    Accept          = "application/json"
-    appinsights-key = "${azurerm_application_insights_api_key.read_telemetry.api_key}"
-  }
+  workspace_id        = try(var.application_insights.workspace_id, null)
 }
 
 # app service
@@ -103,21 +50,14 @@ resource "azurerm_app_service" "app_service" {
   location            = var.location
   name                = local.app_service_name
   resource_group_name = var.resource_group_name
-
-  # combine the hidden tag necessary to connect app insights to app service diagnostics
-  # with any that are passed in to end up with one set of tags for the app service
-  tags = merge(
-    var.tags,
-    {
-      "hidden-related:diagnostics/applicationInsightsSettings" = "{\"ApiKey\":${data.http.encrypted_ai_api_key.body},\"AppId\":\"${azurerm_application_insights.application_insights.app_id}\"}"
-    }
-  )
+  tags                = var.tags
 
   # combine the default app settings that never change with any that are passed in to
   # end up with one set of app settings for the app service
   app_settings = merge(
     local.default_app_settings,
-    var.app_settings
+    var.app_settings,
+    { "WEBSITE_APPINSIGHTS_ENCRYPTEDAPIKEY" = "{\"ApiKey\":${data.http.encrypted_ai_api_key.body},\"AppId\":\"${azurerm_application_insights.application_insights.app_id}\"}"}
   )
 
   identity {
