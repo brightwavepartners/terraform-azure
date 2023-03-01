@@ -34,7 +34,7 @@ resource "azurerm_virtual_network" "virtual_network" {
   address_space       = ["10.0.0.0/24"]
 }
 
-# app services subnets
+# function app subnet
 module "app_service_subnet" {
   source = "../../modules/subnet"
 

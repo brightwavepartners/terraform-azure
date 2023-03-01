@@ -260,12 +260,6 @@ variable "storage" {
   description = "Determines how to configure the storage account backing the Function App."
 }
 
-variable "subnet_id" {
-  type        = string
-  default     = null
-  description = "The identifier of the subnet that Function App will be associated to."
-}
-
 variable "tags" {
   type        = map(string)
   default     = {}

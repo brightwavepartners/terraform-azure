@@ -118,8 +118,6 @@ This module builds a [Function App](https://learn.microsoft.com/en-us/azure/azur
     - `allowed_ips` - [list(string): Optional] A list of IP addresses that will be allowed access to the storage account if the account is integrated into a virtual network.
     - `enabled` - [bool: Required] Whether or not the storage account should be integrated into the same virtual network that the Function App is integrated into.
 
-`subnet_id` - [string: Optional] The identifier of the subnet that Function App will be associated to. Only applies of the `vnet_integration` variable is configured to integrate the Function App into a virtual network.
-
 `tags` - [map(string): Optional] A list of key-value pairs used to add descriptive identifiers to the Function App used to help organize the resource. Defaults to no tags.
 
 `tenant` - [string: Required] The name of the entity for which the Function App is being provisioned. This is not necessarily the Azure tenant, but rather just a unique identifier to distiguish ownership of the Function App when multiple owner's may exist under a single Azure tenant (e.g. client multi-tenant support of Azure resources under a single business Azure tenant).
