@@ -105,20 +105,20 @@ resource "azurerm_key_vault_access_policy" "keyvault_full_access_users" {
   ]
 
   storage_permissions = [
-    "backup",
-    "delete",
-    "deletesas",
-    "get",
-    "getsas",
-    "list",
-    "listsas",
-    "purge",
-    "recover",
-    "regeneratekey",
-    "restore",
-    "set",
-    "setsas",
-    "update"
+    "Backup",
+    "Delete",
+    "Deletesas",
+    "Get",
+    "Getsas",
+    "List",
+    "Listsas",
+    "Purge",
+    "Recover",
+    "Regeneratekey",
+    "Restore",
+    "Set",
+    "Setsas",
+    "Update"
   ]
 }
 
