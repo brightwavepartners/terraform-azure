@@ -69,11 +69,11 @@ variable "application_insights" {
     {
       enabled                        = bool
       integrate_with_app_diagnostics = optional(bool)
-      workspace_id                   = optional(string)
+      workspace_id                   = optional(string) # if not set and app insights is enabled, app insights will be standalone (non workspace integrated)
     }
   )
   default     = null
-  description = "Determines if Application Insights will be enabled for the App Service along with how it should be configured."
+  description = "Determines if Application Insights will be enabled for the App Service and if so, how it should be configured."
 }
 
 variable "cors_settings" {

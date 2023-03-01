@@ -10,8 +10,8 @@ locals {
   assert_app_service_name_length = length(local.app_service_name) > module.globals.resource_name_max_length.app_service ? file("ERROR: App Service name ${local.app_service_name} exceeds maximum length of ${module.globals.resource_name_max_length.app_service}") : null
 
   default_app_settings = {
-    "APPINSIGHTS_INSTRUMENTATIONKEY"                  = azurerm_application_insights.application_insights.instrumentation_key
-    "APPLICATIONINSIGHTS_CONNECTION_STRING"           = "InstrumentationKey=${azurerm_application_insights.application_insights.instrumentation_key}"
+    "APPINSIGHTS_INSTRUMENTATIONKEY"                  = azurerm_application_insights.application_insights[0].instrumentation_key
+    "APPLICATIONINSIGHTS_CONNECTION_STRING"           = "InstrumentationKey=${azurerm_application_insights.application_insights[0].instrumentation_key}"
   }
 
   # the microsoft given namespace for app service metrics, used in diagnostics settings
@@ -43,6 +43,24 @@ resource "azurerm_application_insights" "application_insights" {
   workspace_id        = try(var.application_insights.workspace_id, null)
 }
 
+# app insights api key
+module "app_insights_api_key" {
+  source = "../application_insights_api_key"
+
+  count = var.application_insights.enabled ? 1 : 0
+
+  application_insights_id = azurerm_application_insights.application_insights[0].id
+  name = "APPSERVICEDIAGNOSTICS_READONLYKEY_${local.app_service_name}"
+  read_permissions = [
+    "agentconfig",
+    "aggregate",
+    "api",
+    "draft",
+    "extendqueries",
+    "search"
+  ]
+}
+
 # app service
 resource "azurerm_app_service" "app_service" {
   app_service_plan_id = var.app_service_plan_id
@@ -54,10 +72,12 @@ resource "azurerm_app_service" "app_service" {
 
   # combine the default app settings that never change with any that are passed in to
   # end up with one set of app settings for the app service
+  #
+  # TODO: app insights might not be enabled, so WEBSITE_APPINSIGHTS_ENCRYPTEDAPIKEY may not work here
   app_settings = merge(
     local.default_app_settings,
     var.app_settings,
-    { "WEBSITE_APPINSIGHTS_ENCRYPTEDAPIKEY" = "{\"ApiKey\":${data.http.encrypted_ai_api_key.body},\"AppId\":\"${azurerm_application_insights.application_insights.app_id}\"}"}
+    { "WEBSITE_APPINSIGHTS_ENCRYPTEDAPIKEY" = "{\"ApiKey\":${module.app_insights_api_key[0].encrypted_api_key},\"AppId\":\"${azurerm_application_insights.application_insights[0].app_id}\"}"}
   )
 
   identity {
@@ -148,29 +168,6 @@ resource "azurerm_app_service" "app_service" {
       app_settings["ServiceBusConnection"]
     ]
   }
-}
-
-# delete the content from the file used to store the user's token
-#   can't just delete the file because a destroy operation that may
-#   come later would fail if the file is deleted, since the data
-#   source above is dependent on the file existing. to make sure
-#   the token is not left around after this script is executed,
-#   delete the file contents.
-resource "null_resource" "token_file_remove" {
-  provisioner "local-exec" {
-    command = <<EOT
-            New-Item -Name '${path.root}/token.txt' -ItemType File -Force
-        EOT
-
-    interpreter = [
-      "pwsh",
-      "-Command"
-    ]
-  }
-
-  depends_on = [
-    azurerm_app_service.app_service
-  ]
 }
 
 # vnet integration for app service - if enabled

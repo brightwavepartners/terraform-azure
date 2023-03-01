@@ -55,9 +55,13 @@ module "app_service" {
 
   app_service_plan_id        = module.app_service_plan.id
   application                = local.application
+  application_insights = {
+    enabled = true
+    integrate_with_app_diagnostics = true
+    workspace_id = module.log_analytics_workspace.id
+  }
   environment                = local.environment
   location                   = local.location
-  log_analytics_workspace_id = module.log_analytics_workspace.id
   resource_group_name        = module.resource_group.name
   role                       = "appone"
   tags                       = local.tags
