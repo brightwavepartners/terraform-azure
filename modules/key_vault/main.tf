@@ -131,8 +131,8 @@ resource "azurerm_key_vault_access_policy" "keyvault_secrets_readonly_users" {
   object_id    = each.value
 
   secret_permissions = [
-    "get",
-    "list"
+    "Get",
+    "List"
   ]
 }
 
