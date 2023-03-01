@@ -109,15 +109,15 @@ resource "azurerm_key_vault_access_policy" "keyvault_full_access_users" {
     "Delete",
     "Deletesas",
     "Get",
-    "Getsas",
+    "GetSAS",
     "List",
-    "Listsas",
+    "ListSAS",
     "Purge",
     "Recover",
-    "Regeneratekey",
+    "RegenerateKey",
     "Restore",
     "Set",
-    "Setsas",
+    "SetSAS",
     "Update"
   ]
 }
