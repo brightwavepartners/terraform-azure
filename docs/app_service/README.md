@@ -6,6 +6,7 @@ This module builds an [App Service](https://learn.microsoft.com/en-us/azure/app-
 - [Application Insights](https://learn.microsoft.com/en-us/azure/azure-monitor/app/app-insights-overview?tabs=net)
 - [Diagnostic settings](https://learn.microsoft.com/en-us/azure/azure-monitor/essentials/diagnostic-settings?tabs=portal)
 - [Virtual Network Integration](https://learn.microsoft.com/en-us/azure/app-service/overview-vnet-integration)
+- [WebJobs storage](https://learn.microsoft.com/en-us/azure/app-service/webjobs-sdk-how-to#webjobs-host)
 
 ## Variables
 
@@ -102,14 +103,41 @@ This module builds an [App Service](https://learn.microsoft.com/en-us/azure/app-
 
 `role` - [string: Required] Defines a role name for the App Service so it can be referred to by this name when attaching to an App Service Plan.
 
-`subnet_id` - [string: Optional] The identifier of the subnet that the App Service will be associated to. Only applies if the `vnet_integration_enabled` variable is configured to integrate the App Service into a virtual network.
-
 `tags` - [map(string): Optional] A list of key-value pairs used to add descriptive identifiers to the App Service used to help organize the resource. Defaults to no tags.
 
 `tenant` - [string: Required] The name of the entity for which the App Service is being provisioned. This is not necessarily the Azure tenant, but rather just a unique identifier to distiguish ownership of the App Service when multiple owner's may exist under a single Azure tenant (e.g. client multi-tenant support of Azure resources under a single business Azure tenant).
 
 `use_32_bit_worker_process` - [bool: Optional] Whether or not to use a 32-bit worker process for the App Service. Defaults to false, which will force a 64-bit worker process.
 
-`vnet_integration_enabled` - [bool: Optional] Whether or not integrate the App Service into a virtual network. Defaults to no virtual network integration.
+`vnet_integration` - [object: Optional] - Defines if and how to integrate the App Service into a virtual network. Defaults to no virtual network integration.
 
-`vnet_route_all_enabled` - [bool: Optional] Whether or not all outbound traffic is to have Virtual Network Security Groups and User Defined Routes applied. Only applies if `vnet_integration_enabled` is set to true. Defaults to false.
+- `subnet_id` - [string: Required] The Azure identifier for a subnet provisioned within a virtual network.
+- `vnet_route_all_enabled` - [bool: Required] Whether or not all outbound traffic is to have Virtual Network Security Groups and User Defined Routes applied.
+
+`webjobs_storage` - [object: Optional] Determines how to configure a storage account that can be used when the App Service is hosting WebJob(s) and the WebJobs SDK is being used. Defaults to no webjobs storage account being provisioned.
+
+- `alert_settings` - [list(object): Optional] Specifies a list of alert settings that can be applied to the App Service. Each alert setting in the list consists of the following properties. Defaults to an empty list, which means no alerts will be configured.
+
+  - `action` - [object: Required] Specifies the action semantics when an alert is triggered
+    - `action_group_id` - [string: Required]
+  - `description` - [string: Required] Describes the alert
+  - `dynamic_criteria` - [object: Optional] Specifies a [dynamic threshold alert](https://learn.microsoft.com/en-us/azure/azure-monitor/alerts/alerts-dynamic-thresholds)
+    - [aggregation](https://learn.microsoft.com/en-us/azure/azure-monitor/essentials/metrics-aggregation-explained) - [string: Required]
+    - [alert_sensitivity](https://learn.microsoft.com/en-us/azure/azure-monitor/alerts/alerts-create-new-alert-rule?tabs=metric) - [string: Required]
+    - `evaluation_failure_count` - [number: Optional] The number of violations to trigger an alert
+    - `evaluation_total_count` - [number: Optional] The number of aggregated lookback points
+    - `metric_name` - [string: Required] One of the metric names to be monitored
+    - `operator` - [string: Required] The criteria operator
+  - `enabled` - [bool: Required] Specifies whether the alert shall be enabled
+  - `frequency` - [string: Optional] The evaluation frequency of this alert
+  - `name` - [string: Required] The name of the alert
+  - `severity` - [number: Required]
+  - `static_criteria` - [object: Optional] Specifies a static threshold alert
+    - [aggregation](https://learn.microsoft.com/en-us/azure/azure-monitor/essentials/metrics-aggregation-explained) - [string: Required]
+    - `metric_name` - [string: Required] The name of the metric to be monitored
+    - `operator` - [string: Required] The criteria operator
+    - `threshold` - [number: Required] The threshold at which the alert will be activated
+  - `window_size` - [string: Optional] The period of time that is used to moniro alert activity
+- `vnet_integration` - [object: Required] Specifies whether the storage account should be integrated into a virtual network and any settings associated with that virtual network integration.
+  - `allowed_ips` - [list(string): Optional] A list of IP addresses that will be allowed access to the storage account if the account is integrated into a virtual network.
+  - `enabled` - [bool: Required] Whether or not the storage account should be integrated into the same virtual network that the App Service is integrated into.

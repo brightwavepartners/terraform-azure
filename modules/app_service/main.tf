@@ -18,11 +18,22 @@ locals {
     "WEBSITE_APPINSIGHTS_ENCRYPTEDAPIKEY" = "{\"ApiKey\":${module.app_insights_api_key[0].encrypted_api_key},\"AppId\":\"${azurerm_application_insights.application_insights[0].app_id}\"}"
   } : {}
 
+  # if webjobs storage is enabled, add app settings to connect the app service to the storage account
+  app_settings_webjobs_storage = var.webjobs_storage != null ? {
+    "AzureWebJobsDashboard" = module.webjobs_storage[0].primary_connection_string
+    "AzureWebJobsStorage"   = module.webjobs_storage[0].primary_connection_string
+  } : {}
+
   # enforce name length restriction and show an error if name is longer than maximum allowed for app services.
   assert_app_service_name_length = length(local.app_service_name) > module.globals.resource_name_max_length.app_service ? file("ERROR: App Service name ${local.app_service_name} exceeds maximum length of ${module.globals.resource_name_max_length.app_service}") : null
 
   # the microsoft given namespace for app service metrics, used in diagnostics settings
   metric_namespace = "Microsoft.Web/sites"
+
+  vnet_integrated_app_service_route_all_enabled = try(var.vnet_integration.vnet_route_all_enabled, null)
+  vnet_integrated_app_service_subnet_id         = try(var.vnet_integration.subnet_id, null)
+  vnet_integrated_storage_allowed_ips           = try(var.webjobs_storage.vnet_integration.allowed_ips, null)
+  vnet_integrated_storage_enabled               = try(var.webjobs_storage.vnet_integration.enabled, false)
 }
 
 # get information about the current azure session
@@ -68,6 +79,27 @@ module "app_insights_api_key" {
   ]
 }
 
+# webjob storage account
+# -- only needed if webjobs storage account provisioning is enabled
+module "webjobs_storage" {
+  source = "../storage_account"
+
+  count = var.webjobs_storage != null ? 1 : 0
+
+  account_replication_type = "LRS"
+  account_tier             = "Standard"
+  application              = var.application
+  alert_settings           = try(var.webjobs_storage.alert_settings, [])
+  allowed_ips              = local.vnet_integrated_storage_allowed_ips
+  environment              = var.environment
+  location                 = var.location
+  role                     = var.role
+  resource_group_name      = var.resource_group_name
+  subnet_ids               = var.webjobs_storage == null ? null : var.webjobs_storage.vnet_integration.enabled ? [var.vnet_integration.subnet_id] : null
+  tags                     = var.tags
+  tenant                   = var.tenant
+}
+
 # app service
 resource "azurerm_app_service" "app_service" {
   app_service_plan_id = var.app_service_plan_info.id
@@ -82,6 +114,7 @@ resource "azurerm_app_service" "app_service" {
   app_settings = merge(
     local.app_settings_application_insights,
     local.app_settings_application_insights_integrate_with_app_diagnostics,
+    local.app_settings_webjobs_storage,
     var.app_settings
   )
 
@@ -154,7 +187,7 @@ resource "azurerm_app_service" "app_service" {
     ]
 
     use_32_bit_worker_process = var.use_32_bit_worker_process
-    vnet_route_all_enabled    = var.vnet_route_all_enabled
+    vnet_route_all_enabled    = local.vnet_integrated_app_service_route_all_enabled
   }
 
   # TODO: this shouldn't be here in an enterprise module, but don't have a way to set this from outside since the lifecycle
@@ -175,12 +208,13 @@ resource "azurerm_app_service" "app_service" {
   }
 }
 
-# vnet integration for app service - if enabled
+# vnet integration for app service
+# -- only need this if app service is vnet integrated
 resource "azurerm_app_service_virtual_network_swift_connection" "vnet_integration" {
-  count = var.vnet_integration_enabled ? 1 : 0
+  count = var.vnet_integration != null ? 1 : 0
 
   app_service_id = azurerm_app_service.app_service.id
-  subnet_id      = var.subnet_id
+  subnet_id      = local.vnet_integrated_app_service_subnet_id
 
   timeouts {
     create = "1h"

@@ -212,12 +212,6 @@ variable "role" {
   description = "Defines a role name for the App Service Plan so it can be referred to by this name when attaching to an App Service Plan."
 }
 
-variable "subnet_id" {
-  type        = string
-  description = "The identifier of the subnet that App Service will be associated to."
-  default     = null
-}
-
 variable "tags" {
   type        = map(string)
   description = "String values used to organize resources."
@@ -234,21 +228,64 @@ variable "use_32_bit_worker_process" {
   description = "If the App Service should run in 32 bit mode, rather than 64 bit mode."
 }
 
-# we could trigger vnet integration based on whether a valid subnet_id is passed or not.
-# this would typically be done using a for_each or count on the value of the subnet_id and
-# simply not create the vnet integration if it is null or empty. unfortunately, in some cases
-# the subnet_id would not be known until after an apply operation so terraform would give an error
-# like 'The "count" value depends on resource attributes that cannot be determined until apply'.
-# to get around that issue, this flag is used to trigger vnet integration because it is a simple
-# bool value that is known before apply.
-variable "vnet_integration_enabled" {
-  type        = bool
-  default     = false
-  description = "Determines if the App Service will be integrated into a virtual network."
+variable "vnet_integration" {
+  type = object(
+    {
+      subnet_id              = string
+      vnet_route_all_enabled = bool
+    }
+  )
+  default     = null
+  description = "Describes how to apply virtual network integration to the Function App and its components."
 }
 
-variable "vnet_route_all_enabled" {
-  type        = bool
-  default     = true
-  description = "Apply network security group rules and user defined routes to all outbound function app traffic."
+variable "webjobs_storage" {
+  type = object(
+    {
+      alert_settings = list(object({
+        action = object(
+          {
+            action_group_id = string
+          }
+        )
+        description = string
+        dynamic_criteria = optional(
+          object(
+            {
+              aggregation              = string
+              alert_sensitivity        = string
+              evaluation_failure_count = optional(number)
+              evaluation_total_count   = optional(number)
+              metric_name              = string
+              operator                 = string
+            }
+          )
+        )
+        enabled   = bool
+        frequency = optional(string)
+        name      = string
+        severity  = number
+        static_criteria = optional(
+          object(
+            {
+              aggregation = string
+              metric_name = string
+              operator    = string
+              threshold   = number
+            }
+          )
+        )
+        window_size = optional(string)
+        }
+      )),
+      vnet_integration = object(
+        {
+          allowed_ips = optional(list(string))
+          enabled     = bool
+        }
+      )
+    }
+  )
+  default     = null
+  description = "Determines how to configure a storage account for webjobs."
 }

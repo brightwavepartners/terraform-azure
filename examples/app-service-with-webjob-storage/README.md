@@ -1,0 +1,5 @@
+# Overview
+
+An Azure WebJob is hosted in an Azure App Service. When an App Service is provisioned, it does not create any associated storage accounts by default because none are required for a basic App Service. The requirment changes for a WebJob hosted on an Azure App Service when the [WebJobs SDK is used](https://learn.microsoft.com/en-us/azure/app-service/webjobs-sdk-how-to#webjobs-host) and a storage account becomes a required component of the App Service. There are ways to develop WebJobs without using the WebJobs SDK, but is highly unlikely that most would prefer that approach since the SDK provides a much easier path to WebJob development.
+
+Due to the requirment for a storage account when using the WebJobs SDK, the [app_service module](../../docs/app_service/README.md) in this library supports automatically creating and linking a storage account to an App Service if desired.

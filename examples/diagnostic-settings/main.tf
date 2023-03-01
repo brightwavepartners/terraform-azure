@@ -59,6 +59,11 @@ module "app_service" {
     os_type = module.app_service_plan.os_type
   }
   application         = local.application
+  application_insights = {
+    enabled = true
+    integrate_with_app_diagnostics = true
+    workspace_id = module.log_analytics_workspace.id
+  }
   environment         = local.environment
   location            = local.location
   resource_group_name = module.resource_group.name
