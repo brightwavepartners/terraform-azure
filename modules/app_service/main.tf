@@ -6,13 +6,20 @@ locals {
   # if the client code supplies a name, use it. otherwise, name the resource using the default naming convention.
   app_service_name = coalesce(var.name, lower("${module.globals.resource_base_name_long}-${var.role}-${module.globals.object_type_names.app_service}"))
 
+  # if application insights is enabled, add app settings to connect to app service
+  app_settings_application_insights = var.application_insights.enabled ? {
+    "ApplicationInsightsAgent_EXTENSION_VERSION" = var.app_service_plan_info.os_type == "Linux" ? "~3" : "~2"
+    "APPINSIGHTS_INSTRUMENTATIONKEY"             = azurerm_application_insights.application_insights[0].instrumentation_key
+    "APPLICATIONINSIGHTS_CONNECTION_STRING"      = "InstrumentationKey=${azurerm_application_insights.application_insights[0].instrumentation_key}"
+  } : {}
+
+  # if application insights is enabled and integration with app diagnostics is also enabled, add app insights api key to app settings to connect app insights with app diagnostics
+  app_settings_application_insights_integrate_with_app_diagnostics = var.application_insights.enabled && var.application_insights.integrate_with_app_diagnostics ? {
+    "WEBSITE_APPINSIGHTS_ENCRYPTEDAPIKEY" = "{\"ApiKey\":${module.app_insights_api_key[0].encrypted_api_key},\"AppId\":\"${azurerm_application_insights.application_insights[0].app_id}\"}"
+  } : {}
+
   # enforce name length restriction and show an error if name is longer than maximum allowed for app services.
   assert_app_service_name_length = length(local.app_service_name) > module.globals.resource_name_max_length.app_service ? file("ERROR: App Service name ${local.app_service_name} exceeds maximum length of ${module.globals.resource_name_max_length.app_service}") : null
-
-  default_app_settings = {
-    "APPINSIGHTS_INSTRUMENTATIONKEY"                  = azurerm_application_insights.application_insights[0].instrumentation_key
-    "APPLICATIONINSIGHTS_CONNECTION_STRING"           = "InstrumentationKey=${azurerm_application_insights.application_insights[0].instrumentation_key}"
-  }
 
   # the microsoft given namespace for app service metrics, used in diagnostics settings
   metric_namespace = "Microsoft.Web/sites"
@@ -40,7 +47,7 @@ resource "azurerm_application_insights" "application_insights" {
   name                = lower("${module.globals.resource_base_name_long}-${var.role}-${module.globals.object_type_names.application_insights}")
   resource_group_name = var.resource_group_name
   tags                = var.tags
-  workspace_id        = try(var.application_insights.workspace_id, null)
+  workspace_id        = var.application_insights.workspace_id
 }
 
 # app insights api key
@@ -50,7 +57,7 @@ module "app_insights_api_key" {
   count = var.application_insights.enabled ? 1 : 0
 
   application_insights_id = azurerm_application_insights.application_insights[0].id
-  name = "APPSERVICEDIAGNOSTICS_READONLYKEY_${local.app_service_name}"
+  name                    = "APPSERVICEDIAGNOSTICS_READONLYKEY_${local.app_service_name}"
   read_permissions = [
     "agentconfig",
     "aggregate",
@@ -63,21 +70,19 @@ module "app_insights_api_key" {
 
 # app service
 resource "azurerm_app_service" "app_service" {
-  app_service_plan_id = var.app_service_plan_id
+  app_service_plan_id = var.app_service_plan_info.id
   https_only          = true
   location            = var.location
   name                = local.app_service_name
   resource_group_name = var.resource_group_name
   tags                = var.tags
 
-  # combine the default app settings that never change with any that are passed in to
-  # end up with one set of app settings for the app service
-  #
-  # TODO: app insights might not be enabled, so WEBSITE_APPINSIGHTS_ENCRYPTEDAPIKEY may not work here
+  # combine all the pre-defined app settings (based on variable configurations)
+  # with any that are passed in to end up with one set of app settings for the app service
   app_settings = merge(
-    local.default_app_settings,
-    var.app_settings,
-    { "WEBSITE_APPINSIGHTS_ENCRYPTEDAPIKEY" = "{\"ApiKey\":${module.app_insights_api_key[0].encrypted_api_key},\"AppId\":\"${azurerm_application_insights.application_insights[0].app_id}\"}"}
+    local.app_settings_application_insights,
+    local.app_settings_application_insights_integrate_with_app_diagnostics,
+    var.app_settings
   )
 
   identity {

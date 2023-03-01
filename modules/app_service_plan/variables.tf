@@ -121,7 +121,6 @@ variable "maximum_elastic_worker_count" {
 
 variable "os_type" {
   type        = string
-  default     = "Windows"
   description = "The kind of App Service Plan to create."
 }
 

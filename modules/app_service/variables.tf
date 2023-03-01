@@ -48,9 +48,14 @@ variable "always_on" {
   description = "Should the App Service stay loaded all the time?"
 }
 
-variable "app_service_plan_id" {
-  type        = string
-  description = "The unique identifier for the App Service Plan to which the App Service will be attached."
+variable "app_service_plan_info" {
+  type = object(
+    {
+      id = string
+      os_type = string # Windows or Linux
+    }
+  )
+  description = "Information about the App Service Plan that will host the App Service."
 }
 
 variable "app_settings" {
@@ -68,11 +73,15 @@ variable "application_insights" {
   type = object(
     {
       enabled                        = bool
-      integrate_with_app_diagnostics = optional(bool)
-      workspace_id                   = optional(string) # if not set and app insights is enabled, app insights will be standalone (non workspace integrated)
+      integrate_with_app_diagnostics = bool
+      workspace_id                   = string
     }
   )
-  default     = null
+  default = {
+    enabled = false
+    integrate_with_app_diagnostics = false
+    workspace_id = ""
+  }
   description = "Determines if Application Insights will be enabled for the App Service and if so, how it should be configured."
 }
 
