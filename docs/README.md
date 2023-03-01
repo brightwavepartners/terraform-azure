@@ -8,6 +8,7 @@ This directory contains documentation about how the IaC is setup and used.
 
 ## Modules
 - [Overview and Layout](./module_overview_and_layout.md)
+- [App_Service](./app_service/README.md)
 - [Function App](./function_app/README.md)
 
 ## Pipelines
