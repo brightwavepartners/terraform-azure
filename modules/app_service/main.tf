@@ -6,22 +6,20 @@ locals {
   # if the client code supplies a name, use it. otherwise, name the resource using the default naming convention.
   app_service_name = coalesce(var.name, lower("${module.globals.resource_base_name_long}-${var.role}-${module.globals.object_type_names.app_service}"))
 
+  # if application insights is enabled, add app settings to connect to app service
+  app_settings_application_insights = var.application_insights.enabled ? {
+    "ApplicationInsightsAgent_EXTENSION_VERSION" = var.app_service_plan_info.os_type == "Linux" ? "~3" : "~2"
+    "APPINSIGHTS_INSTRUMENTATIONKEY"             = azurerm_application_insights.application_insights[0].instrumentation_key
+    "APPLICATIONINSIGHTS_CONNECTION_STRING"      = "InstrumentationKey=${azurerm_application_insights.application_insights[0].instrumentation_key}"
+  } : {}
+
+  # if application insights is enabled and integration with app diagnostics is also enabled, add app insights api key to app settings to connect app insights with app diagnostics
+  app_settings_application_insights_integrate_with_app_diagnostics = var.application_insights.enabled && var.application_insights.integrate_with_app_diagnostics ? {
+    "WEBSITE_APPINSIGHTS_ENCRYPTEDAPIKEY" = "{\"ApiKey\":${module.app_insights_api_key[0].encrypted_api_key},\"AppId\":\"${azurerm_application_insights.application_insights[0].app_id}\"}"
+  } : {}
+
   # enforce name length restriction and show an error if name is longer than maximum allowed for app services.
   assert_app_service_name_length = length(local.app_service_name) > module.globals.resource_name_max_length.app_service ? file("ERROR: App Service name ${local.app_service_name} exceeds maximum length of ${module.globals.resource_name_max_length.app_service}") : null
-
-  default_app_settings = {
-    "APPINSIGHTS_INSTRUMENTATIONKEY"                  = azurerm_application_insights.application_insights.instrumentation_key
-    "APPLICATIONINSIGHTS_CONNECTION_STRING"           = "InstrumentationKey=${azurerm_application_insights.application_insights.instrumentation_key}"
-    "ApplicationInsightsAgent_EXTENSION_VERSION"      = "~3"
-    "XDT_MicrosoftApplicationInsights_Mode"           = "recommended"
-    "APPINSIGHTS_PROFILERFEATURE_VERSION"             = "disabled"
-    "APPINSIGHTS_SNAPSHOTFEATURE_VERSION"             = "disabled"
-    "DiagnosticServices_EXTENSION_VERSION"            = "disabled"
-    "InstrumentationEngine_EXTENSION_VERSION"         = "~1"
-    "SnapshotDebugger_EXTENSION_VERSION"              = "disabled"
-    "XDT_MicrosoftApplicationInsights_BaseExtensions" = "~1"
-    "XDT_MicrosoftApplicationInsights_PreemptSdk"     = "disabled"
-  }
 
   # the microsoft given namespace for app service metrics, used in diagnostics settings
   metric_namespace = "Microsoft.Web/sites"
@@ -42,81 +40,48 @@ module "globals" {
 
 # create an application insights instance that will be connected to the app service
 resource "azurerm_application_insights" "application_insights" {
+  count = var.application_insights.enabled ? 1 : 0
+
   application_type    = "web"
   location            = var.location
   name                = lower("${module.globals.resource_base_name_long}-${var.role}-${module.globals.object_type_names.application_insights}")
   resource_group_name = var.resource_group_name
   tags                = var.tags
-  workspace_id        = var.log_analytics_workspace_id
+  workspace_id        = var.application_insights.workspace_id
 }
 
-# application insights api key for app service diagnostics
-resource "azurerm_application_insights_api_key" "read_telemetry" {
+# app insights api key
+module "app_insights_api_key" {
+  source = "../application_insights_api_key"
+
+  count = var.application_insights.enabled ? 1 : 0
+
+  application_insights_id = azurerm_application_insights.application_insights[0].id
   name                    = "APPSERVICEDIAGNOSTICS_READONLYKEY_${local.app_service_name}"
-  application_insights_id = azurerm_application_insights.application_insights.id
-  read_permissions        = ["agentconfig", "aggregate", "api", "draft", "extendqueries", "search"]
-}
-
-# get token from the service principal so we can use the token in the rest call to the azure encryption engine
-resource "null_resource" "application_insights_app_service_diagnostics" {
-  provisioner "local-exec" {
-    command = <<EOT
-            $password = ConvertTo-SecureString -String $env:ARM_CLIENT_SECRET -AsPlainText -Force
-            $Credential = New-Object -TypeName System.Management.Automation.PSCredential ($env:ARM_CLIENT_ID, $password)
-            Connect-AzAccount -ServicePrincipal -TenantId $env:ARM_TENANT_ID -Credential $Credential
-
-            $token = Get-AzAccessToken
-            $token.Token | Out-File '${path.root}/token.txt'
-        EOT
-
-    interpreter = [
-      "pwsh",
-      "-Command"
-    ]
-  }
-}
-
-# access to the token file
-data "local_file" "token" {
-  filename = "${path.root}/token.txt"
-
-  depends_on = [
-    null_resource.application_insights_app_service_diagnostics
+  read_permissions = [
+    "agentconfig",
+    "aggregate",
+    "api",
+    "draft",
+    "extendqueries",
+    "search"
   ]
-}
-
-# encrypt the api key
-data "http" "encrypted_ai_api_key" {
-  url = "https://appservice-diagnostics.azurefd.net/api/appinsights/encryptkey"
-
-  request_headers = {
-    Authorization   = "Bearer ${data.local_file.token.content_base64}"
-    Accept          = "application/json"
-    appinsights-key = "${azurerm_application_insights_api_key.read_telemetry.api_key}"
-  }
 }
 
 # app service
 resource "azurerm_app_service" "app_service" {
-  app_service_plan_id = var.app_service_plan_id
+  app_service_plan_id = var.app_service_plan_info.id
   https_only          = true
   location            = var.location
   name                = local.app_service_name
   resource_group_name = var.resource_group_name
+  tags                = var.tags
 
-  # combine the hidden tag necessary to connect app insights to app service diagnostics
-  # with any that are passed in to end up with one set of tags for the app service
-  tags = merge(
-    var.tags,
-    {
-      "hidden-related:diagnostics/applicationInsightsSettings" = "{\"ApiKey\":${data.http.encrypted_ai_api_key.body},\"AppId\":\"${azurerm_application_insights.application_insights.app_id}\"}"
-    }
-  )
-
-  # combine the default app settings that never change with any that are passed in to
-  # end up with one set of app settings for the app service
+  # combine all the pre-defined app settings (based on variable configurations)
+  # with any that are passed in to end up with one set of app settings for the app service
   app_settings = merge(
-    local.default_app_settings,
+    local.app_settings_application_insights,
+    local.app_settings_application_insights_integrate_with_app_diagnostics,
     var.app_settings
   )
 
@@ -208,29 +173,6 @@ resource "azurerm_app_service" "app_service" {
       app_settings["ServiceBusConnection"]
     ]
   }
-}
-
-# delete the content from the file used to store the user's token
-#   can't just delete the file because a destroy operation that may
-#   come later would fail if the file is deleted, since the data
-#   source above is dependent on the file existing. to make sure
-#   the token is not left around after this script is executed,
-#   delete the file contents.
-resource "null_resource" "token_file_remove" {
-  provisioner "local-exec" {
-    command = <<EOT
-            New-Item -Name '${path.root}/token.txt' -ItemType File -Force
-        EOT
-
-    interpreter = [
-      "pwsh",
-      "-Command"
-    ]
-  }
-
-  depends_on = [
-    azurerm_app_service.app_service
-  ]
 }
 
 # vnet integration for app service - if enabled

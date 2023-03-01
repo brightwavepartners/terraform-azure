@@ -100,7 +100,7 @@ module "functions" {
     support_credentials = false
   }
   environment               = local.environment
-  functions_runtime_version = local.function.runtime_version  # TODO: isn't this hard-coded in the module?
+  functions_runtime_version = local.function.runtime_version # TODO: isn't this hard-coded in the module?
   location                  = local.location
   resource_group_name       = module.resource_group.name
   role                      = local.function.role
@@ -108,15 +108,15 @@ module "functions" {
     alert_settings = []
     vnet_integration = {
       allowed_ips = [module.utilities.ip]
-      enabled = true
+      enabled     = true
     }
   }
   tags                      = local.tags
   tenant                    = local.tenant
   use_32_bit_worker_process = false
   vnet_integration = {
-    subnet_id = module.app_service_subnet.id
+    subnet_id              = module.app_service_subnet.id
     vnet_route_all_enabled = true
   }
-  worker_runtime_type       = local.function.runtime_type
+  worker_runtime_type = local.function.runtime_type
 }

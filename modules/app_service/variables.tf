@@ -48,9 +48,14 @@ variable "always_on" {
   description = "Should the App Service stay loaded all the time?"
 }
 
-variable "app_service_plan_id" {
-  type        = string
-  description = "The unique identifier for the App Service Plan to which the App Service will be attached."
+variable "app_service_plan_info" {
+  type = object(
+    {
+      id      = string
+      os_type = string # Windows or Linux
+    }
+  )
+  description = "Information about the App Service Plan that will host the App Service."
 }
 
 variable "app_settings" {
@@ -64,10 +69,20 @@ variable "application" {
   description = "The name of the application that this infrastructure is being provisioned for."
 }
 
-variable "application_insights_enabled" {
-  type        = bool
-  default     = false
-  description = "Determines if Application Insights will be enabled for the App Service."
+variable "application_insights" {
+  type = object(
+    {
+      enabled                        = bool
+      integrate_with_app_diagnostics = bool
+      workspace_id                   = string
+    }
+  )
+  default = {
+    enabled                        = false
+    integrate_with_app_diagnostics = false
+    workspace_id                   = ""
+  }
+  description = "Determines if Application Insights will be enabled for the App Service and if so, how it should be configured."
 }
 
 variable "cors_settings" {
@@ -181,12 +196,6 @@ variable "location" {
   description = "The Azure region where the app service will be deployed."
 }
 
-variable "log_analytics_workspace_id" {
-  type        = string
-  default     = null
-  description = "The Azure resource identifier for a Log Analytics Workspace that Application Insight instances will be attached to."
-}
-
 variable "name" {
   type        = string
   default     = null
@@ -242,10 +251,4 @@ variable "vnet_route_all_enabled" {
   type        = bool
   default     = true
   description = "Apply network security group rules and user defined routes to all outbound function app traffic."
-}
-
-variable "workspace_id" {
-  type        = string
-  default     = null
-  description = "The Azure resource identifier for a Log Analytics Workspace that the Application Insights for the App Service will be attached to."
 }
