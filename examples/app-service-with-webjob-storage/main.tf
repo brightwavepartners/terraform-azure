@@ -51,62 +51,10 @@ module "app_service" {
   role                = local.app_service.role
   tags                = local.tags
   tenant              = local.tenant
-  vnet_integration = {
-    subnet_id              = module.app_service_subnet.id
-    vnet_route_all_enabled = true
-  }
   webjobs_storage = {
     alert_settings = []
     vnet_integration = {
       enabled     = false
     }
   }
-}
-
-
-
-# utilitiies, like getting current ip address
-module "utilities" {
-  source = "../../modules/utilities"
-}
-
-# virtual network
-resource "azurerm_virtual_network" "virtual_network" {
-  location            = module.resource_group.location
-  name                = lower("${module.globals.resource_base_name_long}-${module.globals.role_names.network}-${module.globals.object_type_names.virtual_network}")
-  resource_group_name = module.resource_group.name
-  address_space       = ["10.0.0.0/24"]
-}
-
-# app services subnets
-module "app_service_subnet" {
-  source = "../../modules/subnet"
-
-  address_prefixes                    = ["10.0.0.0/24"]
-  application                         = local.application
-  environment                         = local.environment
-  location                            = local.location
-  name                                = lower("${local.application}-${local.app_service_plan.role}-${local.environment}")
-  resource_group_name                 = module.resource_group.name
-  role                                = local.app_service_plan.role
-  tags                                = local.tags
-  tenant                              = local.tenant
-  virtual_network_name                = azurerm_virtual_network.virtual_network.name
-  virtual_network_resource_group_name = azurerm_virtual_network.virtual_network.resource_group_name
-
-  delegation = {
-    name = "Microsoft.Web.serverFarms"
-
-    service_delegation = {
-      name = "Microsoft.Web/serverFarms"
-
-      actions = [
-        "Microsoft.Network/virtualNetworks/subnets/action"
-      ]
-    }
-  }
-
-  service_endpoints = [
-    "Microsoft.Storage"
-  ]
 }
