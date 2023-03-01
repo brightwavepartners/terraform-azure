@@ -51,7 +51,7 @@ variable "always_on" {
 variable "app_service_plan_info" {
   type = object(
     {
-      id = string
+      id      = string
       os_type = string # Windows or Linux
     }
   )
@@ -78,9 +78,9 @@ variable "application_insights" {
     }
   )
   default = {
-    enabled = false
+    enabled                        = false
     integrate_with_app_diagnostics = false
-    workspace_id = ""
+    workspace_id                   = ""
   }
   description = "Determines if Application Insights will be enabled for the App Service and if so, how it should be configured."
 }

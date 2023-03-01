@@ -9,6 +9,6 @@ output "name" {
 }
 
 output "os_type" {
-  value = azurerm_service_plan.appserviceplan.os_type
+  value       = azurerm_service_plan.appserviceplan.os_type
   description = "The operating system the App Service Plan is running on."
 }

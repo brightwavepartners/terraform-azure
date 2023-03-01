@@ -171,7 +171,7 @@ data "azurerm_function_app" "function_app" {
 # data source above
 # -- only need this if storage account is vnet integrated
 resource "azurerm_storage_share" "application_files_storage_share" {
-  count = local.vnet_integrated_storage_enabled  ? 1 : 0
+  count = local.vnet_integrated_storage_enabled ? 1 : 0
 
   name                 = data.azurerm_function_app.function_app[0].app_settings[local.function_app_file_share_application_setting_key]
   storage_account_name = module.storage_account.name

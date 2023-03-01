@@ -194,8 +194,8 @@ variable "location" {
 }
 
 variable "minimum_instance_count" {
-  type = number
-  default = 1
+  type        = number
+  default     = 1
   description = "The minimum number of instances. Only affects apps on the Premium plan."
 }
 

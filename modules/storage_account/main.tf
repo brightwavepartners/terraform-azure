@@ -3,7 +3,7 @@ terraform {
   experiments = [module_variable_optional_attrs]
 }
 
-locals { 
+locals {
   # the role is used in the storage account name, but only so many characters can be
   # used from the role when we combine the role with the other tokens (e.g. tenant name,
   # application name, environment name, etc.) required in our naming convention.
@@ -42,8 +42,8 @@ resource "azurerm_storage_account" "storage_account" {
   name = lower(
     "${module.globals.resource_base_name_short}${substr(var.role, 0, local.max_role_name_length)}${module.globals.object_type_names.storage_account}"
   )
-  resource_group_name             = var.resource_group_name
-  tags                            = var.tags
+  resource_group_name = var.resource_group_name
+  tags                = var.tags
 
   blob_properties {
     dynamic "cors_rule" {

@@ -58,7 +58,7 @@ module "app_service" {
     id      = module.app_service_plan.id
     os_type = module.app_service_plan.os_type
   }
-  application = local.application
+  application         = local.application
   environment         = local.environment
   location            = local.location
   resource_group_name = module.resource_group.name

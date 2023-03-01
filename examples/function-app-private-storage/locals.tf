@@ -2,7 +2,7 @@ locals {
   app_service_plan = {
     kind = "Windows"
     role = "apps1"
-    sku = "EP2"
+    sku  = "EP2"
   }
   application = "private"
   environment = "sbx"
