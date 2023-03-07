@@ -153,6 +153,7 @@ locals {
     "redis"               = "cache"
     "redis_cache"         = "cache"
     "secret_management"   = "secrets"
+    "sql_server"          = "sqlsvr"
   }
 
   # some resources in azure have length restrictions on their name. for those resources with
