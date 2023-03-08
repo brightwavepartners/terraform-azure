@@ -98,6 +98,7 @@ locals {
     "service_bus"             = "sb"
     "signalr"                 = "sr"
     "sql_managed_instance"    = "sqlmi"
+    "sql_server"              = "sqlsvr"
     "storage_account"         = "sa"
     "subnet"                  = "sn"
     "virtual_network"         = "vn"
