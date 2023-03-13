@@ -1,7 +1,11 @@
 locals {
   application = "sql"
   environment = "sbx"
-  location    = "northcentralus"
+  key_vault = {
+    purge_protection_enabled = false
+    sku = "standard"
+  }
+  location = "northcentralus"
   sql_servers = [
     {
       administrator_login    = "sandboxadmin"
@@ -9,9 +13,6 @@ locals {
       databases = [
         {
           role = "platform"
-        },
-        {
-          role = "modules"
         }
       ]
       enabled = true

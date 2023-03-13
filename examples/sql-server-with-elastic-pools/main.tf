@@ -1,3 +1,5 @@
+data "azurerm_client_config" "current" {}
+
 # global naming conventions and resources
 module "globals" {
   source = "../../modules/globals"
@@ -17,6 +19,23 @@ module "resource_group" {
   location    = local.location
   tags        = local.tags
   tenant      = local.tenant
+}
+
+# key vault to store sql admin password
+module "key_vault" {
+  source = "../../modules/key_vault"
+
+  application = local.application
+  environment = local.environment
+  full_access_ids = [
+    data.azurerm_client_config.current.object_id
+  ]
+  location                 = local.location
+  purge_protection_enabled = local.key_vault.purge_protection_enabled
+  resource_group_name      = module.resource_group.name
+  sku                      = local.key_vault.sku
+  tags                     = local.tags
+  tenant                   = local.tenant
 }
 
 # sql servers
