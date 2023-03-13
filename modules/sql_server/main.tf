@@ -29,10 +29,38 @@ module "globals" {
   tenant      = var.tenant
 }
 
+# create a random password for the sql admin account
+# -- if a key vault was provided to store the password
+resource "random_password" "sql_admin_password" {
+  count = var.administrator_password == null ? 1 : 0
+
+  length  = 32
+  special = true
+}
+
+# push the sql administrator password to the key vault
+# -- if a key vault was provided to store the password
+resource "azurerm_key_vault_secret" "sql_admin_password" {
+  count = var.administrator_password == null ? 1 : 0
+
+  content_type = "Password for local SQL administrator account on the SQL Server with name ${local.sql_server_name}"
+  key_vault_id = var.key_vault
+  name = join(
+    "-",
+    [
+      module.globals.resource_base_name_long,
+      module.globals.role_names.data,
+      module.globals.object_type_names.sql_managed_instance,
+      "-adminpassword"
+    ]
+  )
+  value = random_password.sql_admin_password[0].result
+}
+
 # sql server
 resource "azurerm_mssql_server" "sql_server" {
   administrator_login          = var.administrator_login
-  administrator_login_password = var.administrator_password
+  administrator_login_password = try(random_password.sql_admin_password[0].result, var.administrator_password)
   location                     = var.location
   name                         = local.sql_server_name
   resource_group_name          = var.resource_group_name

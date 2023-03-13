@@ -92,14 +92,7 @@ variable "environment" {
 variable "key_vault" {
   type = string
   default = null
-  description = <<EOF
-    The unique Azure identifier for a key vault that will be used to store an automatically generated
-    admin password for the SQL Server. This method is an alternative to providing a hard-coded
-    pasword and results in better security since the password is not part of the source code. If
-    a key vault is provided, a password for the SQL Server admin account will be automatically
-    generated and entered into the key vault provided. If no key vault is provided, a password
-    must be provided.
-  EOF
+  description = "The unique Azure identifier for a key vault that will be used to store an automatically generated admin password for the SQL Server."
 }
 
 variable "location" {

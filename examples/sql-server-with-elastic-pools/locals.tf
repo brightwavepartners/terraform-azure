@@ -9,7 +9,6 @@ locals {
   sql_servers = [
     {
       administrator_login    = "sandboxadmin"
-      administrator_password = "wYZS3$z6tDDG29"
       databases = [
         {
           role = "platform"
