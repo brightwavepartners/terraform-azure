@@ -39,8 +39,8 @@ module "sql_servers" {
   administrator_login    = each.value.administrator_login
   administrator_password = each.value.administrator_password
   application            = local.application
-  databases              = each.value.databases
-  elastic_pools          = each.value.elastic_pools 
+  databases              = try(each.value.databases, [])
+  elastic_pools          = try(each.value.elastic_pools, [])
   environment            = local.environment
   location               = local.location
   resource_group_name    = module.resource_group.name

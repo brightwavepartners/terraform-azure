@@ -52,7 +52,7 @@ resource "azurerm_mssql_server" "sql_server" {
 }
 
 # stand-alone databases (not in an elastic pool)
-module "stand_alone_databases" {
+module "databases" {
   source = "../sql_database"
 
   for_each = {
@@ -71,6 +71,7 @@ module "stand_alone_databases" {
   application         = var.application
   environment         = var.environment
   location            = var.location
+  name                = each.value.name
   resource_group_name = var.resource_group_name
   role                = each.value.role
   sql_server          = azurerm_mssql_server.sql_server.id
@@ -78,8 +79,10 @@ module "stand_alone_databases" {
   tenant              = var.tenant
 }
 
-# elastic pools -- if there are any defined
-resource "azurerm_mssql_elasticpool" "elastic_pools" {
+# elastic pool(s)
+module "elastic_pools" {
+  source = "../sql_elastic_pool"
+
   for_each = {
     for elastic_pool in var.elastic_pools :
     lower(
@@ -92,37 +95,22 @@ resource "azurerm_mssql_elasticpool" "elastic_pools" {
         ]
     )) => elastic_pool
   }
-  license_type = each.value.license_type # if a value is not supplied, it will be null here and will default to "LicenseIncluded"
-  location     = var.location
-  max_size_gb  = each.value.max_size_gb
-  name = coalesce(
-    each.value.name,
-    lower(
-      join(
-        "-",
-        [
-          module.globals.resource_base_name_long,
-          each.value.role,
-          module.globals.object_type_names.elastic_pool
-        ]
-      )
-    )
-  )
-  per_database_settings {
-    max_capacity = each.value.per_database_settings.max_capacity
-    min_capacity = each.value.per_database_settings.min_capacity
+
+  application           = var.application
+  environment           = var.environment
+  databases             = coalesce(each.value.databases, [])
+  location              = var.location
+  max_size_bytes        = each.value.max_size_bytes
+  max_size_gb           = each.value.max_size_gb
+  per_database_settings = each.value.per_database_settings
+  role                  = each.value.role
+  resource_group_name   = var.resource_group_name
+  sku                   = each.value.sku
+  sql_server = {
+    id   = azurerm_mssql_server.sql_server.id
+    name = azurerm_mssql_server.sql_server.name
   }
-  resource_group_name = var.resource_group_name
-  server_name         = azurerm_mssql_server.sql_server.name
-  sku {
-    capacity = each.value.sku.capacity
-    family   = each.value.sku.family
-    name     = each.value.sku.name
-    tier     = each.value.sku.tier
-  }
+  tags   = var.tags
+  tenant = var.tenant
 }
 
-# elastic pool databases
-# # module "elastic_databases" {
-# #   source = "../sql_database"
-# # }

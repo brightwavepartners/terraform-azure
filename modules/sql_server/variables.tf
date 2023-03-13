@@ -41,7 +41,7 @@ variable "databases" {
       }
     )
   )
-  default = []
+  default     = []
   description = "Stand-alone databases (not within an elastic pool) that will be provisioned and attached to this SQL server."
 }
 
@@ -54,6 +54,7 @@ variable "elastic_pools" {
             object(
               {
                 name = optional(string)
+                role = string
               }
             )
           )

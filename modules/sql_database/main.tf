@@ -1,3 +1,7 @@
+terraform {
+  experiments = [module_variable_optional_attrs]
+}
+
 locals {
   name = coalesce(
     var.name,
@@ -25,14 +29,10 @@ module "globals" {
 }
 
 resource "azurerm_mssql_database" "database" {
-  collation    = var.collation
-  license_type = var.license_type
-  name         = local.name
-  server_id    = var.sql_server
-  tags         = var.tags
-
-  # # max_size_gb    = 4
-  # # read_scale     = true
-  # # sku_name       = "S0"
-  # # zone_redundant = true
+  collation       = var.collation
+  elastic_pool_id = var.elastic_pool
+  license_type    = var.license_type
+  name            = local.name
+  server_id       = var.sql_server
+  tags            = var.tags
 }
