@@ -50,7 +50,7 @@ resource "azurerm_key_vault_secret" "sql_admin_password" {
     [
       module.globals.resource_base_name_long,
       module.globals.role_names.data,
-      module.globals.object_type_names.sql_managed_instance,
+      module.globals.object_type_names.sql_server,
       "-adminpassword"
     ]
   )
@@ -77,6 +77,31 @@ resource "azurerm_mssql_server" "sql_server" {
   }
 
   tags = var.tags
+}
+
+# subnets allowed access to sql server
+# -- if a subnet is provided
+resource "azurerm_mssql_virtual_network_rule" "subnets" {
+  for_each = {
+    for subnet in var.subnets : subnet.name => subnet
+  }
+
+  name      = each.value.name
+  server_id = azurerm_mssql_server.sql_server.id
+  subnet_id = each.value.id
+}
+
+# firewall rules
+# -- if any are provided
+resource "azurerm_mssql_firewall_rule" "example" {
+  for_each = {
+    for firewall_rule in var.firewall_rules : firewall_rule.name => firewall_rule
+  }
+
+  name             = each.value.name
+  server_id        = azurerm_mssql_server.sql_server.id
+  start_ip_address = each.value.start_ip_address
+  end_ip_address   = each.value.end_ip_address
 }
 
 # stand-alone databases (not in an elastic pool)

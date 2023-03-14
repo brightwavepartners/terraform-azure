@@ -33,14 +33,14 @@ variable "location" {
 }
 
 variable "max_size_bytes" {
-  type = number
-  default = null
+  type        = number
+  default     = null
   description = "The max size fo the elastic pool in bytes. Conflicts with max_size_gb."
 }
 
 variable "max_size_gb" {
-  type = number
-  default = null
+  type        = number
+  default     = null
   description = "The max size fo the elastic pool in gigabytes. Conflicts with max_size_bytes."
 }
 

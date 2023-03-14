@@ -140,6 +140,14 @@ locals {
     "app_service_plan" = 40
   }
 
+  # azure resource types that are used throughout azure in many different capacities
+  # during infrastructure provisioning. an example where these resource types are used
+  # is in service endpoint names. the azure resource reference documentation provides
+  # these values (https://learn.microsoft.com/en-us/azure/templates/).
+  resource_types = {
+    "microsoft_sql" = "Microsoft.Sql"
+  }
+
   # provides consistent short-names for roles. see the documentation in the docs folder for further
   # discussion on resource naming conventions and how role_names is used.
   role_names = {

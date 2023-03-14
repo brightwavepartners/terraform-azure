@@ -4,15 +4,15 @@ variable "application" {
 }
 
 variable "collation" {
-  type = string
-  default = "SQL_Latin1_General_CP1_CI_AS"
+  type        = string
+  default     = "SQL_Latin1_General_CP1_CI_AS"
   description = "The collation for the database."
 }
 
 variable "elastic_pool" {
-    type = string
-    default = null
-    description = <<EOF
+  type        = string
+  default     = null
+  description = <<EOF
         The unique Azure identifier for an elastic pool that this database will be attached to.
         If no elastic pool identifier is provided, the database will not be attached to an
         elastic pool and will be just a stand-alone database.
@@ -25,8 +25,8 @@ variable "environment" {
 }
 
 variable "license_type" {
-  type = string
-  default = null
+  type        = string
+  default     = null
   description = "The license type applied to the database. If a value is not provided here, it will end up being null when used and the Azure default is 'LisenceIncluded'"
 }
 
@@ -52,8 +52,8 @@ variable "role" {
 }
 
 variable "sql_server" {
-    type = string
-    description = "The unique Azure identifier for the SQL server that this database should be attached to."
+  type        = string
+  description = "The unique Azure identifier for the SQL server that this database should be attached to."
 }
 
 variable "tags" {

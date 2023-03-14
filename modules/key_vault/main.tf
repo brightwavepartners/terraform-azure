@@ -1,3 +1,16 @@
+# *** IMPORTANT NOTE ***
+#
+# there are access policies being provisioned within this module. under
+# most conditions, simply having a reference to this module in your code
+# will create an implicit dependency so terraform will know that this
+# module needs to be created first. unfortunately, it appears that implicit
+# dependency doesn't necessarily include some items internal to this module.
+# specifically, the implicit dependency does not appear to wait for the
+# access policies to be provisioned within this module, so you may get a
+# permission error if the module that is dependant on this one is dependant
+# on the access policy. the fix is to add an explicit dependency on this module
+# which will force the module that is dependant on this one to wait for this
+# entire module to complete.
 terraform {
   experiments = [module_variable_optional_attrs]
 }

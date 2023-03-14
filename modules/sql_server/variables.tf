@@ -89,9 +89,23 @@ variable "environment" {
   description = "The environment for which to provision the infrastructure (e.g. development, production)"
 }
 
+variable "firewall_rules" {
+  type = list(
+    object(
+      {
+        end_ip_address = string
+        name = string
+        start_ip_address = string
+      }
+    )
+  )
+  default = []
+  description = "A list of IP addresses that will be added to the firewall rules list of the SQL Server to allow connection."
+}
+
 variable "key_vault" {
-  type = string
-  default = null
+  type        = string
+  default     = null
   description = "The unique Azure identifier for a key vault that will be used to store an automatically generated admin password for the SQL Server."
 }
 
@@ -116,6 +130,19 @@ variable "role" {
   description = "Defines a role name for the SQL Server that is used to name the resource."
 }
 
+variable "subnets" {
+  type = list(
+    object(
+      {
+        name = string
+        id = string
+      }
+    )
+  )
+  default = []
+  description = "The list of subnetss"
+}
+
 variable "sql_version" {
   type        = string
   description = "The version for the new server. Valid values are: 2.0 (for v11 server) and 12.0 (for v12 server)."
@@ -130,3 +157,4 @@ variable "tenant" {
   type        = string
   description = "Tenant name."
 }
+
