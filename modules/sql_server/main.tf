@@ -48,9 +48,7 @@ resource "azurerm_key_vault_secret" "sql_admin_password" {
   name = join(
     "-",
     [
-      module.globals.resource_base_name_long,
       local.sql_server_name,
-      module.globals.object_type_names.sql_server,
       "adminpassword"
     ]
   )
