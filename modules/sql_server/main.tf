@@ -49,9 +49,9 @@ resource "azurerm_key_vault_secret" "sql_admin_password" {
     "-",
     [
       module.globals.resource_base_name_long,
-      module.globals.role_names.data,
+      local.sql_server_name,
       module.globals.object_type_names.sql_server,
-      "-adminpassword"
+      "adminpassword"
     ]
   )
   value = random_password.sql_admin_password[0].result
