@@ -51,10 +51,5 @@ module "app_service" {
   role                = local.app_service.role
   tags                = local.tags
   tenant              = local.tenant
-  webjobs_storage = {
-    alert_settings = []
-    vnet_integration = {
-      enabled     = false
-    }
-  }
+  webjobs_storage     = local.app_service.webjobs_storage
 }
