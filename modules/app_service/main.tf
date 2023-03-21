@@ -65,7 +65,7 @@ resource "azurerm_application_insights" "application_insights" {
 module "app_insights_api_key" {
   source = "../application_insights_api_key"
 
-  count = var.application_insights.enabled ? 1 : 0
+  count = var.application_insights.enabled && var.application_insights.integrate_with_app_diagnostics ? 1 : 0
 
   application_insights_id = azurerm_application_insights.application_insights[0].id
   name                    = "APPSERVICEDIAGNOSTICS_READONLYKEY_${local.app_service_name}"
