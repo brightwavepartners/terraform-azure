@@ -60,8 +60,8 @@ module "app_service" {
   }
   application         = local.application
   application_insights = {
-    enabled = true
-    integrate_with_app_diagnostics = true
+    enabled = local.app_service.application_insights.enabled
+    integrate_with_app_diagnostics = local.app_service.application_insights.integrate_with_app_diagnostics
     workspace_id = module.log_analytics_workspace.id
   }
   environment         = local.environment
