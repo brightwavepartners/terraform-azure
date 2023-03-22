@@ -79,6 +79,7 @@ locals {
   # discussion on resource naming conventions and how object_type_names is used.
   object_type_names = {
     "api_management"          = "apim"
+    "app_configuration"       = "appcfg"
     "app_registration"        = "ar"
     "app_service"             = "as"
     "app_service_plan"        = "asp"
@@ -154,6 +155,7 @@ locals {
     "api"                 = "api"
     "cache"               = "cache"
     "cdn"                 = "cdn"
+    "configuration"       = "cfg"
     "data"                = "data"
     "firewall"            = "firewall"
     "identity_and_access" = "iaa"
