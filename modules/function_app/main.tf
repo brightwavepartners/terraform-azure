@@ -134,6 +134,14 @@ resource "azurerm_function_app" "function_app" {
   }
 }
 
+# TODO: the discussion below about WEBSITE_CONTENTSHARE applies only to
+# consumption and premium plans. dedicated plans (e.g. P1v2) would not
+# automatically create the WEBSITE_CONTENTSHARE setting. in that case,
+# the data resource below to find the existing value for WEBSITE_CONTENTSHARE
+# will fail because that setting is not required for a dedicated plan.
+# need to fix this to account for that since this code will fail if a
+# dedicated plan is configured for the function app.
+
 # during normal function app provisioning, a file share is automatically
 # created in the storage account that is associated with the function app
 # to hold the function app's code files. the name of that file share
