@@ -50,9 +50,31 @@ module "app_service_plan" {
   tenant              = local.tenant
 }
 
-# app service
-module "app_service" {
-  source = "../../modules/app_service"
+# # # app service
+# # module "app_service" {
+# #   source = "../../modules/app_service"
+
+# #   app_service_plan_info = {
+# #     id      = module.app_service_plan.id
+# #     os_type = module.app_service_plan.os_type
+# #   }
+# #   application         = local.application
+# #   application_insights = {
+# #     enabled = local.app_service.application_insights.enabled
+# #     integrate_with_app_diagnostics = local.app_service.application_insights.integrate_with_app_diagnostics
+# #     workspace_id = module.log_analytics_workspace.id
+# #   }
+# #   environment         = local.environment
+# #   location            = local.location
+# #   resource_group_name = module.resource_group.name
+# #   role                = local.app_service.role
+# #   tags                = local.tags
+# #   tenant              = local.tenant
+# # }
+
+# windows web app
+module "windows_web_app" {
+  source = "../../modules/windows_web_app"
 
   app_service_plan_info = {
     id      = module.app_service_plan.id
@@ -60,14 +82,15 @@ module "app_service" {
   }
   application         = local.application
   application_insights = {
-    enabled = local.app_service.application_insights.enabled
-    integrate_with_app_diagnostics = local.app_service.application_insights.integrate_with_app_diagnostics
+    enabled = local.windows_web_app.application_insights.enabled
+    integrate_with_app_diagnostics = local.windows_web_app.application_insights.integrate_with_app_diagnostics
     workspace_id = module.log_analytics_workspace.id
   }
+  application_stack   = local.windows_web_app.application_stack
   environment         = local.environment
   location            = local.location
   resource_group_name = module.resource_group.name
-  role                = local.app_service.role
+  role                = local.windows_web_app.role
   tags                = local.tags
   tenant              = local.tenant
 }
