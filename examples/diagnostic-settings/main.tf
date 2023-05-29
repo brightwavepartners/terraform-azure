@@ -42,10 +42,10 @@ module "service_plan" {
   application         = local.application
   environment         = local.environment
   location            = local.location
-  os_type             = local.app_service_plan.os_type
+  os_type             = local.service_plan.os_type
   resource_group_name = module.resource_group.name
-  role                = local.app_service_plan.role
-  sku_name            = local.app_service_plan.sku_name
+  role                = local.service_plan.role
+  sku_name            = local.service_plan.sku_name
   tags                = local.tags
   tenant              = local.tenant
 }
@@ -54,21 +54,21 @@ module "service_plan" {
 module "windows_web_app" {
   source = "../../modules/windows_web_app"
 
-  app_service_plan_info = {
-    id      = module.service_plan.id
-    os_type = module.service_plan.os_type
-  }
-  application         = local.application
+  application = local.application
   application_insights = {
-    enabled = local.windows_web_app.application_insights.enabled
+    enabled                        = local.windows_web_app.application_insights.enabled
     integrate_with_app_diagnostics = local.windows_web_app.application_insights.integrate_with_app_diagnostics
-    workspace_id = module.log_analytics_workspace.id
+    workspace_id                   = module.log_analytics_workspace.id
   }
   application_stack   = local.windows_web_app.application_stack
   environment         = local.environment
   location            = local.location
   resource_group_name = module.resource_group.name
   role                = local.windows_web_app.role
-  tags                = local.tags
-  tenant              = local.tenant
+  service_plan_info = {
+    id      = module.service_plan.id
+    os_type = module.service_plan.os_type
+  }
+  tags   = local.tags
+  tenant = local.tenant
 }

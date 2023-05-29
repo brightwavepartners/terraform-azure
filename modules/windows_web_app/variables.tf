@@ -48,16 +48,6 @@ variable "always_on" {
   description = "Should the App Service stay loaded all the time?"
 }
 
-variable "app_service_plan_info" {
-  type = object(
-    {
-      id      = string
-      os_type = string # Windows or Linux
-    }
-  )
-  description = "Information about the App Service Plan that will host the App Service."
-}
-
 variable "app_settings" {
   type        = map(string)
   default     = {}
@@ -72,12 +62,12 @@ variable "application" {
 variable "application_stack" {
   type = object(
     {
-      current_stack = optional(string)
+      current_stack  = optional(string)
       dotnet_version = optional(string)
     }
   )
   default = {
-    current_stack = "dotnet"
+    current_stack  = "dotnet"
     dotnet_version = "v6.0"
   }
   description = "Defines application stack configuration such as the runtime (e.g. dotnet) and dotnet version (e.g. v6.0)"
@@ -218,6 +208,16 @@ variable "resource_group_name" {
 variable "role" {
   type        = string
   description = "Defines a role name for the App Service Plan so it can be referred to by this name when attaching to an App Service Plan."
+}
+
+variable "service_plan_info" {
+  type = object(
+    {
+      id      = string
+      os_type = string # Windows or Linux
+    }
+  )
+  description = "Information about the Service Plan that will host the Service."
 }
 
 variable "tags" {

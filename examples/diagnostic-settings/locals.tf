@@ -1,15 +1,15 @@
 locals {
-  app_service_plan = {
-    os_type  = "Windows"
-    role     = "apps1"
-    sku_name = "P1v3"
-  }
   application = "diagnostics"
   environment = "loc"
   location    = "northcentralus"
   log_analytics_workspace = {
     retention_period = 30
     sku              = "PerGB2018"
+  }
+  service_plan = {
+    os_type  = "Windows"
+    role     = "apps1"
+    sku_name = "P1v3"
   }
   tags   = {}
   tenant = var.tenant
@@ -20,7 +20,7 @@ locals {
       integrate_with_app_diagnostics = true
     }
     application_stack = {
-      current_stack = "dotnet"
+      current_stack  = "dotnet"
       dotnet_version = "v6.0"
     }
     role = "appone"

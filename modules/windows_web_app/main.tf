@@ -8,7 +8,7 @@ locals {
 
   # if application insights is enabled, add app settings to connect to app service
   app_settings_application_insights = var.application_insights.enabled ? {
-    "ApplicationInsightsAgent_EXTENSION_VERSION" = var.app_service_plan_info.os_type == "Linux" ? "~3" : "~2"
+    "ApplicationInsightsAgent_EXTENSION_VERSION" = var.service_plan_info.os_type == "Linux" ? "~3" : "~2"
     "APPINSIGHTS_INSTRUMENTATIONKEY"             = azurerm_application_insights.application_insights[0].instrumentation_key
     "APPLICATIONINSIGHTS_CONNECTION_STRING"      = "InstrumentationKey=${azurerm_application_insights.application_insights[0].instrumentation_key}"
   } : {}
@@ -100,120 +100,12 @@ module "webjobs_storage" {
   tenant                   = var.tenant
 }
 
-# # # app service
-# # resource "azurerm_app_service" "app_service" {
-# #   app_service_plan_id = var.app_service_plan_info.id
-# #   https_only          = true
-# #   location            = var.location
-# #   name                = local.app_service_name
-# #   resource_group_name = var.resource_group_name
-# #   tags                = var.tags
-
-# #   # combine all the pre-defined app settings (based on variable configurations)
-# #   # with any that are passed in to end up with one set of app settings for the app service
-# #   app_settings = merge(
-# #     local.app_settings_application_insights,
-# #     local.app_settings_application_insights_integrate_with_app_diagnostics,
-# #     local.app_settings_webjobs_storage,
-# #     var.app_settings
-# #   )
-
-# #   identity {
-# #     type = "SystemAssigned"
-# #   }
-
-# #   logs {
-# #     detailed_error_messages_enabled = true
-# #     failed_request_tracing_enabled  = true
-# #     http_logs {
-# #       file_system {
-# #         retention_in_days = 30
-# #         retention_in_mb   = 35
-# #       }
-# #     }
-# #   }
-
-# #   site_config {
-# #     always_on = var.always_on
-# #     cors {
-# #       allowed_origins = try([
-# #         for origin in [
-# #           for origin in var.cors_settings.allowed_origins :
-# #           replace(
-# #             origin,
-# #             "$${var.environment}",
-# #             var.environment
-# #           )
-# #         ] :
-# #         replace(
-# #           origin,
-# #           "$${var.location}",
-# #           module.globals.location_short_name_list[var.location]
-# #         )
-# #       ], [])
-# #       support_credentials = try(var.cors_settings.support_credentials, false)
-# #     }
-
-# #     default_documents = [
-# #       "Default.htm",
-# #       "Default.html",
-# #       "Default.asp",
-# #       "index.htm",
-# #       "index.html",
-# #       "iisstart.htm",
-# #       "default.aspx",
-# #       "index.php",
-# #       "hostingstart.html"
-# #     ]
-
-# #     dotnet_framework_version = var.dotnet_framework_version
-# #     ftps_state               = "FtpsOnly"
-
-# #     # we are doing the ip_restriction attribute via a for loop instead of dynamic block because
-# #     # a dynamic block will not construct an empty list to remove all rules if the passed in 
-# #     # configuration calls for it. in other words, there is no way to use a dynamic block to 
-# #     # remove all restrictions if there were some left from a previous configuration that we need
-# #     # removed.
-# #     ip_restriction = [
-# #       for ip_restriction in var.ip_restrictions : {
-# #         action                    = ip_restriction.action
-# #         headers                   = [] # TODO: according the documentation, this value should be optional but apparently is not. there is an issue here https://github.com/hashicorp/terraform-provider-azurerm/issues/12367. Need to figure out how to work around the issue without hard-coding.
-# #         ip_address                = ip_restriction.ip_address
-# #         name                      = ip_restriction.name
-# #         priority                  = ip_restriction.priority
-# #         service_tag               = ip_restriction.service_tag
-# #         virtual_network_subnet_id = ip_restriction.virtual_network_subnet_id
-# #       }
-# #     ]
-
-# #     use_32_bit_worker_process = var.use_32_bit_worker_process
-# #     vnet_route_all_enabled    = local.vnet_integrated_app_service_route_all_enabled
-# #   }
-
-# #   # TODO: this shouldn't be here in an enterprise module, but don't have a way to set this from outside since the lifecycle
-# #   # meta-argument only allows literal values (https://www.terraform.io/language/meta-arguments/lifecycle#literal-values-only).auth_settings)
-# #   # there is a github issue to support dynamic blocks in met-arguments here https://github.com/hashicorp/terraform/issues/24188,
-# #   # but it seems unlikely this will be addressed.  a workaround might be to place a token identifier here and have
-# #   # a separate process, perhaps in a ci/cd pipeline, replace the token identifier with the dynamic content before the code
-# #   # is actually executed. but that requires an external process to "transform" this section. you would no longer be running
-# #   # the terraform commands directly (e.g. terraform plan), but instead would always run the separate process which would run the
-# #   # terraform command internally after transformation.
-# #   lifecycle {
-# #     ignore_changes = [
-# #       app_settings["AzureWebJobsDashboard"],
-# #       app_settings["AzureWebJobsStorage"],
-# #       app_settings["IsDisabled"],
-# #       app_settings["ServiceBusConnection"]
-# #     ]
-# #   }
-# # }
-
 resource "azurerm_windows_web_app" "web_app" {
   https_only          = true
   location            = var.location
   name                = local.app_service_name
   resource_group_name = var.resource_group_name
-  service_plan_id = var.app_service_plan_info.id
+  service_plan_id     = var.service_plan_info.id
   tags                = var.tags
 
   # combine all the pre-defined app settings (based on variable configurations)
@@ -243,7 +135,7 @@ resource "azurerm_windows_web_app" "web_app" {
   site_config {
     always_on = var.always_on
     application_stack {
-      current_stack = var.application_stack.current_stack
+      current_stack  = var.application_stack.current_stack
       dotnet_version = var.application_stack.dotnet_version
     }
     cors {
@@ -277,7 +169,7 @@ resource "azurerm_windows_web_app" "web_app" {
       "hostingstart.html"
     ]
 
-    ftps_state               = "FtpsOnly"
+    ftps_state = "FtpsOnly"
 
     # we are doing the ip_restriction attribute via a for loop instead of dynamic block because
     # a dynamic block will not construct an empty list to remove all rules if the passed in 
@@ -296,8 +188,8 @@ resource "azurerm_windows_web_app" "web_app" {
       }
     ]
 
-    use_32_bit_worker = var.use_32_bit_worker_process
-    vnet_route_all_enabled    = local.vnet_integrated_app_service_route_all_enabled
+    use_32_bit_worker      = var.use_32_bit_worker_process
+    vnet_route_all_enabled = local.vnet_integrated_app_service_route_all_enabled
   }
 
   # TODO: this shouldn't be here in an enterprise module, but don't have a way to set this from outside since the lifecycle

@@ -21,35 +21,35 @@ module "resource_group" {
   tenant      = local.tenant
 }
 
-# app service plan
-module "app_service_plan" {
-  source = "../../modules/app_service_plan"
+# service plan
+module "service_plan" {
+  source = "../../modules/service_plan"
 
   application         = local.application
   environment         = local.environment
   location            = local.location
-  os_type             = local.app_service_plan.os_type
+  os_type             = local.service_plan.os_type
   resource_group_name = module.resource_group.name
-  role                = local.app_service_plan.role
-  sku_name            = local.app_service_plan.sku_name
+  role                = local.service_plan.role
+  sku_name            = local.service_plan.sku_name
   tags                = local.tags
   tenant              = local.tenant
 }
 
-# app service
-module "app_service" {
-  source = "../../modules/app_service"
+# windows web application
+module "windows_web_app" {
+  source = "../../modules/windows_web_app"
 
-  app_service_plan_info = {
-    id      = module.app_service_plan.id
-    os_type = module.app_service_plan.os_type
+  service_plan_info = {
+    id      = module.service_plan.id
+    os_type = module.service_plan.os_type
   }
   application         = local.application
   environment         = local.environment
   location            = local.location
   resource_group_name = module.resource_group.name
-  role                = local.app_service.role
+  role                = local.windows_web_app.role
   tags                = local.tags
   tenant              = local.tenant
-  webjobs_storage     = local.app_service.webjobs_storage
+  webjobs_storage     = local.windows_web_app.webjobs_storage
 }
