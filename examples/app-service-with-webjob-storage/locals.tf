@@ -1,5 +1,15 @@
 locals {
-  app_service = {
+  service_plan = {
+    os_type  = "Windows"
+    role     = "apps1"
+    sku_name = "P1v3"
+  }
+  application = "webjobs"
+  environment = "loc"
+  location    = "northcentralus"
+  tags        = {}
+  tenant      = var.tenant
+  windows_web_app = {
     role = "appone"
     # the presence of this webjobs_storage block signals we want
     # this app service to host webjobs and so we need a storage
@@ -14,14 +24,4 @@ locals {
       }
     }
   }
-  app_service_plan = {
-    os_type  = "Windows"
-    role     = "apps1"
-    sku_name = "P1v3"
-  }
-  application = "webjobs"
-  environment = "loc"
-  location    = "northcentralus"
-  tags   = {}
-  tenant = var.tenant
 }
