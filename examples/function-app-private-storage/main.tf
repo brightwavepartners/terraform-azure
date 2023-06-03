@@ -27,11 +27,16 @@ module "resource_group" {
 }
 
 # virtual network
-resource "azurerm_virtual_network" "virtual_network" {
-  location            = module.resource_group.location
-  name                = lower("${module.globals.resource_base_name_long}-${module.globals.role_names.network}-${module.globals.object_type_names.virtual_network}")
-  resource_group_name = module.resource_group.name
+module "virtual_network" {
+  source = "../../modules/virtual_network"
+
   address_space       = ["10.0.0.0/24"]
+  application         = local.application
+  environment         = local.environment
+  location            = local.location
+  resource_group_name = module.resource_group.name
+  tags                = local.tags
+  tenant              = local.tenant
 }
 
 # function app subnet
@@ -47,8 +52,8 @@ module "app_service_subnet" {
   role                                = local.app_service_plan.role
   tags                                = local.tags
   tenant                              = local.tenant
-  virtual_network_name                = azurerm_virtual_network.virtual_network.name
-  virtual_network_resource_group_name = azurerm_virtual_network.virtual_network.resource_group_name
+  virtual_network_name                = module.virtual_network.name
+  virtual_network_resource_group_name = module.virtual_network.resource_group_name
 
   delegation = {
     name = "Microsoft.Web.serverFarms"
