@@ -12,8 +12,8 @@ locals {
     scale_settings = [
       {
         diagnostics_settings = [],
-        enabled = true,
-        name    = "apps1-asp-setting1",
+        enabled              = true,
+        name                 = "apps1-asp-setting1",
         notification = {
           email = {
             recipients                            = [],
