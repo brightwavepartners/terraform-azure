@@ -3,7 +3,19 @@
 In an effort to organize cloud assets and make operational management easier, a well-defined naming convention can help to locate assets quickly and make managing resources easier. A well-defined naming convention also means resources can be named automatically in the IaC. The automatic naming ensures that the convention is followed, since the code is creating the name, and reduces the dependence on people to come up with names. In most cases, the only piece of information that is required to be provided by a person is the application name.
 
 ## Our naming convention
-The naming convention applied in this repository is based on the following pattern:
+
+### Management Groups
+
+````
+businessunit-environment
+````
+### Subscriptions
+
+````
+businessunit-role-###
+````
+
+### Resrouce Groups and Resources
 
 ````
 tenant-application-environment-location-role-objecttype
