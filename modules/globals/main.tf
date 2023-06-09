@@ -79,6 +79,7 @@ locals {
   # discussion on resource naming conventions and how object_type_names is used.
   object_type_names = {
     "api_management"          = "apim"
+    "app_configuration"       = "appcfg"
     "app_registration"        = "ar"
     "app_service"             = "as"
     "app_service_plan"        = "asp"
@@ -86,6 +87,7 @@ locals {
     "cdn_endpoint"            = "cdne"
     "cdn_profile"             = "cdnp"
     "data_factory"            = "df"
+    "elastic_pool"            = "ep"
     "failover_group"          = "fog"
     "function_app"            = "af"
     "key_vault"               = "kv"
@@ -97,6 +99,7 @@ locals {
     "route_table"             = "rt"
     "service_bus"             = "sb"
     "signalr"                 = "sr"
+    "sql_database"            = "sqldb"
     "sql_managed_instance"    = "sqlmi"
     "sql_server"              = "sqlsvr"
     "storage_account"         = "sa"
@@ -138,12 +141,21 @@ locals {
     "app_service_plan" = 40
   }
 
+  # azure resource types that are used throughout azure in many different capacities
+  # during infrastructure provisioning. an example where these resource types are used
+  # is in service endpoint names. the azure resource reference documentation provides
+  # these values (https://learn.microsoft.com/en-us/azure/templates/).
+  resource_types = {
+    "microsoft_sql" = "Microsoft.Sql"
+  }
+
   # provides consistent short-names for roles. see the documentation in the docs folder for further
   # discussion on resource naming conventions and how role_names is used.
   role_names = {
     "api"                 = "api"
     "cache"               = "cache"
     "cdn"                 = "cdn"
+    "configuration"       = "cfg"
     "data"                = "data"
     "firewall"            = "firewall"
     "identity_and_access" = "iaa"

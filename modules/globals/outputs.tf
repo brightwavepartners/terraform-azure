@@ -80,6 +80,11 @@ output "resource_name_max_length" {
   description = "Azure name length restrictions per resource type."
 }
 
+output "resource_types" {
+  value       = local.resource_types
+  description = "Azure resource types that are used throughout azure to specify the type of a resource being worked on."
+}
+
 output "role_names" {
   value       = local.role_names
   description = "A list of common names used to identify an Azure resource role."
