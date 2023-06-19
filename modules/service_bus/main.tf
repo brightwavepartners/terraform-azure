@@ -18,7 +18,7 @@ module "globals" {
 
 # queues
 module "queues" {
-  soure = "./queue"
+  source = "./queue"
 
   for_each = {
     for queue in var.queues : queue.name => queue
