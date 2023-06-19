@@ -1,6 +1,6 @@
-variable "namespace_name" {
+variable "namespace_id" {
   type        = string
-  description = "The name of the ServiceBus Namespace to create this queue in."
+  description = "The unique Azure resource identifier for the Service Bus namespace to which the queue will be attached."
 }
 
 variable "queue" {
@@ -12,7 +12,3 @@ variable "queue" {
   )
 }
 
-variable "resource_group_name" {
-  type        = string
-  description = "The name of the resource group in which the service bus is provisioned."
-}

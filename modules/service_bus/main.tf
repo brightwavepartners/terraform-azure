@@ -24,9 +24,8 @@ module "queues" {
     for queue in var.queues : queue.name => queue
   }
 
-  namespace_name      = azurerm_servicebus_namespace.service_bus.name
-  queue               = each.value
-  resource_group_name = var.resource_group_name
+  namespace_id = azurerm_servicebus_namespace.service_bus.id
+  queue        = each.value
 }
 
 # service bus
