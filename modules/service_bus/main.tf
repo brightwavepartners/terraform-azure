@@ -16,6 +16,19 @@ module "globals" {
   tenant      = var.tenant
 }
 
+# queues
+module "queues" {
+  soure = "./queue"
+
+  for_each = {
+    for queue in var.queues : queue.name => queue
+  }
+
+  namespace_name      = azurerm_servicebus_namespace.service_bus.name
+  queue               = each.value
+  resource_group_name = var.resource_group_name
+}
+
 # service bus
 resource "azurerm_servicebus_namespace" "service_bus" {
   name                = lower("${module.globals.resource_base_name_short}${substr(module.globals.role_names.messaging, 0, length(module.globals.resource_base_name_short) - 2)}${module.globals.object_type_names.service_bus}")
