@@ -142,6 +142,20 @@ variable "resource_group_name" {
   description = "The name of the resource group in which the service bus will be created."
 }
 
+variable "role_assignments" {
+  type = list(
+    object(
+      {
+        name = string
+        object_id = string
+        role_name = string
+      }
+    )
+  )
+  default = []
+  description = "A list of key-value pairs that describe the desired roles to be added to the service bus in the form of objectid=rolenmae."
+}
+
 variable "sku" {
   type        = string
   description = "Specifies the service bus product type."

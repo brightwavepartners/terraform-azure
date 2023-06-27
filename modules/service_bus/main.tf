@@ -50,6 +50,18 @@ module "topics" {
   topic        = each.value
 }
 
+# give the managed identities for all of the app services and function apps access to the service bus
+resource "azurerm_role_assignment" "role_assignments" {
+  for_each = {
+    for role_assignment in var.role_assignments :
+    role_assignment.object_id => role_assignment
+  }
+
+  scope                = azurerm_servicebus_namespace.service_bus.id
+  role_definition_name = each.value.role_name
+  principal_id         = each.value.object_id
+}
+
 # service bus vnet integration - if enabled
 resource "azurerm_servicebus_namespace_network_rule_set" "network_rule_set" {
   count = var.vnet_integration_enabled ? 1 : 0
