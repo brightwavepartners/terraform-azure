@@ -93,13 +93,13 @@ variable "firewall_rules" {
   type = list(
     object(
       {
-        end_ip_address = string
-        name = string
+        end_ip_address   = string
+        name             = string
         start_ip_address = string
       }
     )
   )
-  default = []
+  default     = []
   description = "A list of IP addresses that will be added to the firewall rules list of the SQL Server to allow connection."
 }
 
@@ -135,11 +135,11 @@ variable "subnets" {
     object(
       {
         name = string
-        id = string
+        id   = string
       }
     )
   )
-  default = []
+  default     = []
   description = "The list of subnetss"
 }
 

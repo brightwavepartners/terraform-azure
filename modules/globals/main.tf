@@ -160,6 +160,7 @@ locals {
     "configuration"       = "cfg"
     "data"                = "data"
     "firewall"            = "firewall"
+    "front_door_profile"  = "network"
     "identity_and_access" = "iaa"
     "logging"             = "log"
     "messaging"           = "messaging"
