@@ -61,6 +61,8 @@ locals {
   # will not work correctly since it depends on the 'location_name_max_length' when deriving
   # names.
   location_short_name_list = {
+    "centralus"      = "cus"
+    "cus"            = "cus"
     "eastus"         = "eus"
     "eus"            = "eus"
     "northcentralus" = "ncus"
