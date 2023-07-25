@@ -1,15 +1,3 @@
-locals {
-  v = flatten(
-    [
-      for endpoint in var.endpoints : [
-        for route in endpoint.routes : {
-          route_name = route.name
-        }
-      ]
-    ]
-  )
-}
-
 # global naming conventions and resources
 module "globals" {
   source = "../globals"
@@ -44,13 +32,20 @@ resource "azurerm_cdn_frontdoor_endpoint" "endpoints" {
 
 resource "azurerm_cdn_frontdoor_origin_group" "origin_groups" {
   for_each = {
-    for x in local.v : x.route_name => x
+    for route in flatten([
+      for endpoint in var.endpoints : [
+        for route in endpoint.routes : route
+      ]
+    ]) : route.name => route
   }
 
   cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.front_door_profile.id
 
   load_balancing {
+    additional_latency_in_milliseconds = 0
+    sample_size                        = 16
+    successful_samples_required        = 3
   }
 
-  name = each.value.route_name
+  name = each.value.name
 }
