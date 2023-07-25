@@ -14,7 +14,31 @@ variable "endpoints" {
               name = string
               origin_group = object(
                 {
+                  health_probe = optional(
+                    object(
+                      {
+                        internal_in_seconds = number
+                        path                = optional(string)
+                        protocol            = string
+                        request_type        = optional(string)
+                      }
+                    )
+                  )
+                  load_balancing = object(
+                    {
+                      additional_latency_in_milliseconds = optional(number)
+                      sample_size                        = optional(number)
+                      successful_samples_required        = optional(number)
+                    }
+                  )
                   name = string
+                  origins = list(
+                    object(
+                      {
+                        name = string
+                      }
+                    )
+                  )
                 }
               )
             }

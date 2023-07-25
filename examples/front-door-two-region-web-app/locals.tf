@@ -3,10 +3,10 @@ locals {
     application = "frontdoor"
     apps = [
       {
-        role                      = "frontdoor",
-        service_plan_role         = "apps1"
+        role              = "frontdoor",
+        service_plan_role = "apps1"
       }
-    ]    
+    ]
     environment = "sbx"
     front_door = {
       endpoints = [
@@ -16,7 +16,23 @@ locals {
             {
               name = "default"
               origin_group = {
+                health_probe = {
+                  internal_in_seconds = 100
+                  path                = "/"
+                  protocol            = "Http"
+                  request_type        = "HEAD"
+                }
+                load_balancing = {
+                  additional_latency_in_milliseconds = 0
+                  sample_size                        = 16
+                  successful_samples_required        = 3
+                }
                 name = "default"
+                origins = [
+                  {
+                    name = "origin1"
+                  }
+                ]
               }
             }
           ]
@@ -31,13 +47,13 @@ locals {
       auxiliary_regions = [
         {
           location = "southcentralus"
-        }       
+        }
       ]
-    }    
+    }
     service_plans = [
       {
-        os_type = "Windows"
-        role    = "apps1"
+        os_type  = "Windows"
+        role     = "apps1"
         sku_name = "F1"
       }
     ]
