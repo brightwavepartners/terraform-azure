@@ -30,6 +30,8 @@ locals {
                 name = "default"
                 origins = [
                   {
+                    certificate_name_check_enabled = true
+                    host_name = "10.0.0.0"
                     name = "origin1"
                   }
                 ]

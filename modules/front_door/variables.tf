@@ -35,6 +35,8 @@ variable "endpoints" {
                   origins = list(
                     object(
                       {
+                        certificate_name_check_enabled = bool
+                        host_name = string
                         name = string
                       }
                     )

@@ -2,19 +2,6 @@ terraform {
   experiments = [module_variable_optional_attrs]
 }
 
-locals {
-  v = flatten([
-    for endpoint in var.endpoints : [
-      for route_key, route in endpoint.routes : [
-        for origin in route.origin_group.origins : {
-          origin_group_name = route.origin_group.name
-          name = origin.name
-        }
-      ]
-    ]
-  ])
-}
-
 # global naming conventions and resources
 module "globals" {
   source = "../globals"
@@ -66,9 +53,9 @@ resource "azurerm_cdn_frontdoor_origin_group" "origin_groups" {
 
     content {
       interval_in_seconds = each.value.health_probe.internal_in_seconds
-      path = each.value.health_probe.path
-      protocol = each.value.health_probe.protocol
-      request_type = each.value.health_probe.request_type
+      path                = each.value.health_probe.path
+      protocol            = each.value.health_probe.protocol
+      request_type        = each.value.health_probe.request_type
     }
   }
 
@@ -84,11 +71,39 @@ resource "azurerm_cdn_frontdoor_origin_group" "origin_groups" {
 # origins
 resource "azurerm_cdn_frontdoor_origin" "origins" {
   for_each = {
-    for x in local.v : x.name => x
+    for origin in flatten([
+      for endpoint in var.endpoints : [
+        for route_key, route in endpoint.routes : [
+          for origin in route.origin_group.origins : {
+            certificate_name_check_enabled = origin.certificate_name_check_enabled
+            host_name                      = origin.host_name
+            name                           = origin.name
+            origin_group_name              = route.origin_group.name
+          }
+        ]
+      ]
+    ]) : origin.name => origin
   }
 
   cdn_frontdoor_origin_group_id = element(
-      [
-        for origin_group in 
-  host_name = each.value.name
+    [
+      for origin_group in azurerm_cdn_frontdoor_origin_group.origin_groups : origin_group.id
+      if(origin_group.name == each.value.origin_group_name)
+    ],
+    0
+  )
+  certificate_name_check_enabled = each.value.certificate_name_check_enabled
+  host_name                      = each.value.host_name
+  name                           = each.value.name
+}
+
+# routes
+resource "azurerm_cdn_frontdoor_route" "routes" {
+  for_each = {
+    for route in flatten([
+      for endpoint in var.endpoints : [
+        for route in endpoint.routes : route
+      ]
+    ]) : route.name => route
+  }
 }
