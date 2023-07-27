@@ -9,9 +9,9 @@
 		"args": { "VARIANT": "ubuntu-22.04" }
 	},
 	"features": {
-		"azure-cli": "2.50.0",
-		"powershell": "7.3.6",
-		"terraform": "1.5.3"
+		"azure-cli": "2.39.0",
+		"powershell": "7.2.5",
+		"terraform": "1.2"
 	},
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.

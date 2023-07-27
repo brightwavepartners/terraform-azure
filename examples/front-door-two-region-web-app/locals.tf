@@ -36,6 +36,8 @@ locals {
                   }
                 ]
               }
+              patterns_to_match = ["/"]
+              supported_protocols = ["Http", "Https"]
             }
           ]
         }

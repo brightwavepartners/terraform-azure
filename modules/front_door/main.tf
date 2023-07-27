@@ -73,7 +73,7 @@ resource "azurerm_cdn_frontdoor_origin" "origins" {
   for_each = {
     for origin in flatten([
       for endpoint in var.endpoints : [
-        for route_key, route in endpoint.routes : [
+        for route in endpoint.routes : [
           for origin in route.origin_group.origins : {
             certificate_name_check_enabled = origin.certificate_name_check_enabled
             host_name                      = origin.host_name
@@ -88,11 +88,14 @@ resource "azurerm_cdn_frontdoor_origin" "origins" {
   cdn_frontdoor_origin_group_id = element(
     [
       for origin_group in azurerm_cdn_frontdoor_origin_group.origin_groups : origin_group.id
-      if(origin_group.name == each.value.origin_group_name)
+      if(
+        origin_group.name == each.value.origin_group_name
+      )
     ],
     0
   )
   certificate_name_check_enabled = each.value.certificate_name_check_enabled
+  enabled                        = true
   host_name                      = each.value.host_name
   name                           = each.value.name
 }
@@ -102,8 +105,37 @@ resource "azurerm_cdn_frontdoor_route" "routes" {
   for_each = {
     for route in flatten([
       for endpoint in var.endpoints : [
-        for route in endpoint.routes : route
+        for route in endpoint.routes : {
+          endpoint_name       = endpoint.name
+          name                = route.name
+          origin_group_name   = route.origin_group.name
+          origins             = route.origin_group.origins
+          patterns_to_match   = route.patterns_to_match
+          supported_protocols = route.supported_protocols
+        }
       ]
     ]) : route.name => route
   }
+
+  cdn_frontdoor_endpoint_id = element(
+    [
+      for endpoint in azurerm_cdn_frontdoor_endpoint.endpoints : endpoint.id
+      if(endpoint.name == each.value.endpoint_name)
+    ],
+    0
+  )
+  cdn_frontdoor_origin_group_id = element(
+    [
+      for origin_group in azurerm_cdn_frontdoor_origin_group.origin_groups : origin_group.id
+      if(origin_group.name == each.value.origin_group_name)
+    ],
+    0
+  )
+  cdn_frontdoor_origin_ids = [
+    for origin in azurerm_cdn_frontdoor_origin.origins : origin.id
+    if(can(index(each.value.origins.*.name, origin.name)))
+  ]
+  name                = each.value.name
+  patterns_to_match   = each.value.patterns_to_match
+  supported_protocols = each.value.supported_protocols
 }

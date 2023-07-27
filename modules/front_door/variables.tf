@@ -43,6 +43,8 @@ variable "endpoints" {
                   )
                 }
               )
+              patterns_to_match = list(string)
+              supported_protocols = list(string)              
             }
           )
         )
