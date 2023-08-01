@@ -36,15 +36,29 @@ variable "endpoints" {
                     object(
                       {
                         certificate_name_check_enabled = bool
-                        host_name = string
-                        name = string
+                        host_name                      = string
+                        name                           = string
                       }
                     )
                   )
                 }
               )
-              patterns_to_match = list(string)
-              supported_protocols = list(string)              
+              patterns_to_match   = list(string)
+              supported_protocols = list(string)
+            }
+          )
+        )
+        security_policy = optional(
+          object(
+            {
+              name = string
+              web_application_firewall_policy = object(
+                {
+                  mode     = string
+                  name     = string
+                  sku_name = string
+                }
+              )
             }
           )
         )

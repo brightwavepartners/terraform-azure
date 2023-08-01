@@ -139,3 +139,53 @@ resource "azurerm_cdn_frontdoor_route" "routes" {
   patterns_to_match   = each.value.patterns_to_match
   supported_protocols = each.value.supported_protocols
 }
+
+# web application firewall policy
+resource "azurerm_cdn_frontdoor_firewall_policy" "firewall_policies" {
+  for_each = {
+    for endpoint in var.endpoints : endpoint.name => endpoint.security_policy.web_application_firewall_policy
+  }
+
+  mode                = each.value.mode
+  name                = each.value.name
+  resource_group_name = var.resource_group_name
+  sku_name            = each.value.sku_name
+}
+
+# security policy
+resource "azurerm_cdn_frontdoor_security_policy" "security_policies" {
+  for_each = {
+    for endpoint in var.endpoints : endpoint.name => endpoint
+  }
+
+  cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.front_door_profile.id
+  name                     = each.value.security_policy.name
+
+  security_policies {
+    firewall {
+      association {
+        domain {
+          cdn_frontdoor_domain_id = element(
+            [
+              for endpoint in azurerm_cdn_frontdoor_endpoint.endpoints : endpoint.id
+              if(
+                endpoint.name == each.value.name
+              )
+            ],
+            0
+          )
+        }
+        patterns_to_match = ["/*"]
+      }
+      cdn_frontdoor_firewall_policy_id = element(
+        [
+          for web_application_firewall_policy in azurerm_cdn_frontdoor_firewall_policy.firewall_policies : web_application_firewall_policy.id
+          if(
+            web_application_firewall_policy.name == each.value.security_policy.web_application_firewall_policy.name
+          )
+        ],
+        0
+      )
+    }
+  }
+}

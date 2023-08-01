@@ -1,3 +1,7 @@
+output "apps" {
+    value = module.apps
+}
+
 output "location" {
     value = module.resource_group.location
 }

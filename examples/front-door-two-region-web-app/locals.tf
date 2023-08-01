@@ -12,6 +12,14 @@ locals {
       endpoints = [
         {
           name = "hrcenter"
+          security_policy = {
+            name = "securityPolicy1"
+            web_application_firewall_policy = {
+              mode     = "Prevention"
+              name     = "wafPolicy1"
+              sku_name = "Standard_AzureFrontDoor"
+            }
+          }
           routes = [
             {
               name = "default"
@@ -31,12 +39,22 @@ locals {
                 origins = [
                   {
                     certificate_name_check_enabled = true
-                    host_name = "10.0.0.0"
-                    name = "origin1"
+                    host_name                      = "${join(
+                      "-",
+                      [
+                        local.configuration.tenant,
+                        local.configuration.application,
+                        local.configuration.environment,
+                        "ncus",
+                        local.configuration.apps[0].role,
+                        "as"
+                      ]
+                    )}.azurewebsites.net"
+                    name      = "origin1"
                   }
                 ]
               }
-              patterns_to_match = ["/"]
+              patterns_to_match   = ["/"]
               supported_protocols = ["Http", "Https"]
             }
           ]

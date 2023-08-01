@@ -39,15 +39,15 @@ module "service_plans" {
     ) => service_plan
   }
 
-  application = var.configuration.application
+  application         = var.configuration.application
   environment         = var.configuration.environment
   location            = var.location
   os_type             = each.value.os_type
   resource_group_name = module.resource_group.name
   role                = each.value.role
-  sku_name = each.value.sku_name
-  tags     = var.configuration.tags
-  tenant   = var.configuration.tenant
+  sku_name            = each.value.sku_name
+  tags                = var.configuration.tags
+  tenant              = var.configuration.tenant
 }
 
 # apps
@@ -68,7 +68,7 @@ module "apps" {
     ) => app
   }
 
-  application = var.configuration.application
+  application         = var.configuration.application
   environment         = var.configuration.environment
   location            = var.location
   resource_group_name = module.resource_group.name
@@ -103,7 +103,7 @@ module "apps" {
     )
   }
 
-  tags                      = var.configuration.tags
-  tenant                    = var.configuration.tenant
+  tags   = var.configuration.tags
+  tenant = var.configuration.tenant
 }
 
