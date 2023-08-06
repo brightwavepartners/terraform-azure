@@ -39,17 +39,7 @@ locals {
                 origins = [
                   {
                     certificate_name_check_enabled = true
-                    host_name                      = "${join(
-                      "-",
-                      [
-                        local.configuration.tenant,
-                        local.configuration.application,
-                        local.configuration.environment,
-                        "ncus",
-                        local.configuration.apps[0].role,
-                        "as"
-                      ]
-                    )}.azurewebsites.net"
+                    host_name                      = "10.0.0.0"
                     name      = "origin1"
                   }
                 ]
