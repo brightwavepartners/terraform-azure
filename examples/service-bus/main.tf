@@ -30,12 +30,14 @@ module "service_bus" {
   capacity                 = local.service_bus.capacity
   environment              = local.environment
   location                 = local.location
+  queues                   = local.service_bus.queues
   resource_group_name      = module.resource_group.name
   role_assignments         = local.service_bus.role_assignments
   sku                      = local.service_bus.sku
   subnet_ids               = local.service_bus.subnet_ids
   tenant                   = local.tenant
   tags                     = local.tags
+  topics                   = local.service_bus.topics
   vnet_integration_enabled = false
 }
 

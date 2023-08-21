@@ -50,7 +50,7 @@ module "topics" {
   topic        = each.value
 }
 
-# give the managed identities for all of the app services and function apps access to the service bus
+# assign roles to the service bus
 resource "azurerm_role_assignment" "role_assignments" {
   for_each = {
     for role_assignment in var.role_assignments :
