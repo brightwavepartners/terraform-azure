@@ -124,9 +124,36 @@ variable "location" {
   description = "The Azure region where the function app will be deployed."
 }
 
+variable "queues" {
+  type = list(
+    object(
+      {
+        enable_batched_operations = bool,
+        name                      = string
+      }
+    )
+  )
+  default     = []
+  description = "The list of queues to create on the Service Bus."
+}
+
 variable "resource_group_name" {
   type        = string
   description = "The name of the resource group in which the service bus will be created."
+}
+
+variable "role_assignments" {
+  type = list(
+    object(
+      {
+        name = string
+        object_id = string
+        role_name = string
+      }
+    )
+  )
+  default = []
+  description = "A list of key-value pairs that describe the desired roles to be added to the service bus in the form of objectid=rolenmae."
 }
 
 variable "sku" {

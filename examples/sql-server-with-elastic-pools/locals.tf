@@ -41,7 +41,7 @@ locals {
   tags   = {}
   tenant = var.tenant
   virtual_network = {
-    address_space = ["10.0.0.0/24"]
+    address_space           = ["10.0.0.0/24"]
     subnet_address_prefixes = ["10.0.0.0/24"]
   }
 }

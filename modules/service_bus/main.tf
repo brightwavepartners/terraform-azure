@@ -16,6 +16,18 @@ module "globals" {
   tenant      = var.tenant
 }
 
+# queues
+module "queues" {
+  source = "./queue"
+
+  for_each = {
+    for queue in var.queues : queue.name => queue
+  }
+
+  namespace_id = azurerm_servicebus_namespace.service_bus.id
+  queue        = each.value
+}
+
 # service bus
 resource "azurerm_servicebus_namespace" "service_bus" {
   name                = lower("${module.globals.resource_base_name_short}${substr(module.globals.role_names.messaging, 0, length(module.globals.resource_base_name_short) - 2)}${module.globals.object_type_names.service_bus}")
@@ -36,6 +48,18 @@ module "topics" {
 
   namespace_id = azurerm_servicebus_namespace.service_bus.id
   topic        = each.value
+}
+
+# assign roles to the service bus
+resource "azurerm_role_assignment" "role_assignments" {
+  for_each = {
+    for role_assignment in var.role_assignments :
+    role_assignment.object_id => role_assignment
+  }
+
+  scope                = azurerm_servicebus_namespace.service_bus.id
+  role_definition_name = each.value.role_name
+  principal_id         = each.value.object_id
 }
 
 # service bus vnet integration - if enabled
