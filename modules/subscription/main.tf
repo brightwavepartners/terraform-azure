@@ -15,7 +15,7 @@ resource "azurerm_subscription" "subscription" {
     [
       var.business_unit,
       var.application,
-      module.global.environment_list[var.environment],
+      module.globals.environment_list[var.environment],
       var.subscription_count
     ]
   )
