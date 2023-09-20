@@ -10,13 +10,13 @@ module "globals" {
 
 # subscription
 resource "azurerm_subscription" "subscription" {
-    subsubscription_name = join(
-        "-",
-        [
-            var.business_unit,
-            var.application,
-            module.global.environment_list[var.environment],
-            var.subscription_count
-        ]
-    )  
+  subscription_name = join(
+    "-",
+    [
+      var.business_unit,
+      var.application,
+      module.global.environment_list[var.environment],
+      var.subscription_count
+    ]
+  )
 }
