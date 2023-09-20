@@ -51,7 +51,7 @@ locals {
 
   environment_short_name_development = "dev"
   environment_short_name_local       = "loc"
-  environment_short_name_production  = "prod"
+  environment_short_name_production  = "prd"
   environment_short_name_qa          = "qa"
   environment_short_name_uat         = "uat"
 
