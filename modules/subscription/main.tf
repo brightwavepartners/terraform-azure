@@ -6,8 +6,6 @@ module "globals" {
 
   application = var.application
   environment = var.environment
-  location    = null
-  tenant      = null
 }
 
 # billing scope needed to provision a subscription
