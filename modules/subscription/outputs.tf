@@ -1,3 +1,3 @@
-output "subscription_id" {
+output "id" {
   value = azurerm_subscription.subscription.id
 }
