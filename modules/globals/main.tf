@@ -33,6 +33,7 @@ locals {
     "local"         = local.environment_short_name_local
     "loc"           = local.environment_short_name_local
     "qa"            = local.environment_short_name_qa
+    "prd"           = local.environment_short_name_production
     "production"    = local.environment_short_name_production
     "prod"          = local.environment_short_name_production
     "sandbox"       = "sbx"
