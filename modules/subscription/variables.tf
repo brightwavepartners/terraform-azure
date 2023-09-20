@@ -1,3 +1,18 @@
+variable "billing_account_id" {
+    type = string
+    description = "Identifier for the Azure billing account that was created when signing up for Azure."  
+}
+
+variable "billing_profile_id" {
+  type = string
+  description = "Identifier for the Azure billing profile that contains payment method and invoice information associated with the billing account."
+}
+
+variable "invoice_section_id" {
+    type = string
+    description = "Identifier for the Azure billing invoice section which lists the total transaction amounts since last billing period."
+}
+
 variable "business_unit" {
     type = string
     description = "The business unit that the subscription is related to."  
