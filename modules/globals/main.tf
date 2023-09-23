@@ -33,6 +33,7 @@ locals {
     "local"         = local.environment_short_name_local
     "loc"           = local.environment_short_name_local
     "qa"            = local.environment_short_name_qa
+    "prd"           = local.environment_short_name_production
     "production"    = local.environment_short_name_production
     "prod"          = local.environment_short_name_production
     "sandbox"       = "sbx"
@@ -51,7 +52,7 @@ locals {
 
   environment_short_name_development = "dev"
   environment_short_name_local       = "loc"
-  environment_short_name_production  = "prod"
+  environment_short_name_production  = "prd"
   environment_short_name_qa          = "qa"
   environment_short_name_uat         = "uat"
 
@@ -131,10 +132,28 @@ locals {
   # in cases where a resource name is length restricted, we use the 'resource_base_name_short' for its common name. the short
   # name simply takes a substring of each token, defined by the various length variables in this file, and drops the hyphen
   # between each token.
-  resource_base_name_long = "${var.tenant}-${var.application}-${local.environment_list[var.environment]}-${local.location_short_name_list[var.location]}"
-  resource_base_name_short = replace(
-    "${substr(var.tenant, 0, local.tenant_name_max_length)}-${substr(var.application, 0, local.application_name_max_length)}-${substr(local.environment_list[var.environment], 0, local.environment_name_max_length)}-${substr(local.location_short_name_list[var.location], 0, local.location_name_max_length)}",
-    "-",
+  resource_base_name_long = try(
+    join(
+      "-",
+      [
+        var.tenant,
+        var.application,
+        local.environment_list[var.environment],
+        local.location_short_name_list[var.location]
+      ]
+    ),
+    ""
+  )
+  resource_base_name_short = try(
+    join(
+      "",
+      [
+        substr(var.tenant, 0, local.tenant_name_max_length),
+        substr(var.application, 0, local.application_name_max_length),
+        substr(local.environment_list[var.environment], 0, local.environment_name_max_length),
+        substr(local.location_short_name_list[var.location], 0, local.location_name_max_length)
+      ]
+    ),
     ""
   )
 

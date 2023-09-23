@@ -10,10 +10,12 @@ variable "environment" {
 
 variable "location" {
   type        = string
+  default     = null
   description = "The region in which to provision the infrastructure."
 }
 
 variable "tenant" {
   type        = string
+  default     = null
   description = "Tenant name."
 }
