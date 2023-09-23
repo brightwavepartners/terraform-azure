@@ -1,7 +1,3 @@
-terraform {
-  experiments = [module_variable_optional_attrs]
-}
-
 locals {
   app_service_plan_name               = lower("${module.globals.resource_base_name_long}-${var.role}-${module.globals.object_type_names.app_service_plan}")
   assert_app_service_plan_name_length = length(local.app_service_plan_name) > module.globals.resource_name_max_length.app_service_plan ? file("ERROR: App Service Plan name ${local.app_service_plan_name} exceeds maximum length of ${module.globals.resource_name_max_length.app_service_plan}") : null

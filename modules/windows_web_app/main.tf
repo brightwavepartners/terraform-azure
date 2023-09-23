@@ -1,7 +1,3 @@
-terraform {
-  experiments = [module_variable_optional_attrs]
-}
-
 locals {
   # if the client code supplies a name, use it. otherwise, name the resource using the default naming convention.
   app_service_name = coalesce(var.name, lower("${module.globals.resource_base_name_long}-${var.role}-${module.globals.object_type_names.app_service}"))

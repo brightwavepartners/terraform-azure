@@ -2,10 +2,6 @@
 #       - what process creates the tables?
 # TODO: it looks like changing the collation to SQL_Latin1_General_CI_AS_KS_WS, which is required by the insight project because of sharepoint, during creation is not supported. need to find a way to change the collation once the creation is complete.
 
-terraform {
-  experiments = [module_variable_optional_attrs]
-}
-
 locals {
   arm_template_filename = "azuredeploy.json"
 

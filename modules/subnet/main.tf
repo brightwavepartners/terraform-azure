@@ -3,10 +3,6 @@
 # in the security rule. this will produce a warning that the experimental feature is turned on
 # whenever a plan/apply is executed. if/when this feature is made permanent, this flag can be
 # removed.
-terraform {
-  experiments = [module_variable_optional_attrs]
-}
-
 module "globals" {
   source = "../globals"
 

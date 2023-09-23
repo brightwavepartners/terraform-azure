@@ -1,7 +1,3 @@
-terraform {
-  experiments = [module_variable_optional_attrs]
-}
-
 locals {
   # in the rules defined here, there is an identifier that is used to indicate that the address should be the address of
   # the subnet in which the sql managed instance is provisioned (i.e. local.subnet_address_identifier). the reason an

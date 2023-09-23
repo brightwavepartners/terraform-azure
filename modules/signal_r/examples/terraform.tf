@@ -1,6 +1,6 @@
 terraform {
   backend "local" {}
-  required_version = "~> 1.1.3"
+  required_version = "~> 1.5.7"
   required_providers {
     azurerm = {
       source  = "registry.terraform.io/hashicorp/azurerm"

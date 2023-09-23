@@ -1,7 +1,3 @@
-terraform {
-  experiments = [module_variable_optional_attrs]
-}
-
 locals {
   # if the client code supplies a name, use it. otherwise, name the resource using the default naming convention.
   sql_server_name = coalesce(

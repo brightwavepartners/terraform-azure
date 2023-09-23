@@ -1,7 +1,3 @@
-terraform {
-  experiments = [module_variable_optional_attrs]
-}
-
 # global naming conventions and resources
 module "globals" {
   source = "../globals"

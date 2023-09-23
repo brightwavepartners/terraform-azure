@@ -2,10 +2,6 @@
 #       in a generic way to be a true enterprise module. for now, those items are hard-coded
 #       in the azuredeploy.json
 
-terraform {
-  experiments = [module_variable_optional_attrs]
-}
-
 locals {
   arm_template_filename = "azuredeploy.json"
   metric_namespace      = "Microsoft.Cdn/profiles"
