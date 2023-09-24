@@ -1,7 +1,3 @@
-terraform {
-  experiments = [module_variable_optional_attrs]
-}
-
 locals {
   # default app settings are those that are always the same for every function app created
   default_app_settings = {

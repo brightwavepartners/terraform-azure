@@ -11,9 +11,6 @@
 # on the access policy. the fix is to add an explicit dependency on this module
 # which will force the module that is dependant on this one to wait for this
 # entire module to complete.
-terraform {
-  experiments = [module_variable_optional_attrs]
-}
 
 locals {
   metric_namespace = "Microsoft.KeyVault/vaults"

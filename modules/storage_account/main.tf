@@ -1,8 +1,4 @@
 # TODO: assert appropriate subnets and ip rules if vnet integration is desired
-terraform {
-  experiments = [module_variable_optional_attrs]
-}
-
 locals {
   # the role is used in the storage account name, but only so many characters can be
   # used from the role when we combine the role with the other tokens (e.g. tenant name,

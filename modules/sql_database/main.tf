@@ -1,7 +1,3 @@
-terraform {
-  experiments = [module_variable_optional_attrs]
-}
-
 locals {
   name = coalesce(
     var.name,

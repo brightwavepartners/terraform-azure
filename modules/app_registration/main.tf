@@ -1,7 +1,3 @@
-terraform {
-  experiments = [module_variable_optional_attrs]
-}
-
 # app registration
 resource "azuread_application" "app_registration" {
   display_name                   = var.name

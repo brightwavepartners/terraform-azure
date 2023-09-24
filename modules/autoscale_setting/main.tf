@@ -1,7 +1,3 @@
-terraform {
-  experiments = [module_variable_optional_attrs]
-}
-
 locals {
   profile_capacity_identifier  = "capacity"
   scale_rule_action_identifier = "action"

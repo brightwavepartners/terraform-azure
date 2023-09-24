@@ -1,7 +1,3 @@
-terraform {
-  experiments = [module_variable_optional_attrs]
-}
-
 resource "azurerm_monitor_metric_alert" "alert" {
   action {
     action_group_id = var.alert_settings.action.action_group_id

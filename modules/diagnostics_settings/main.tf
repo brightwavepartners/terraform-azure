@@ -1,7 +1,3 @@
-terraform {
-  experiments = [module_variable_optional_attrs]
-}
-
 # diagnostics settings
 resource "azurerm_monitor_diagnostic_setting" "diagnostic_setting" {
   for_each = {
