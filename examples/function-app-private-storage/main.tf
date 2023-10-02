@@ -74,7 +74,7 @@ module "app_service_subnet" {
 
 # app service plan
 module "app_service_plan" {
-  source = "../../modules/app_service_plan"
+  source = "../../modules/service_plan"
 
   application                  = local.application
   environment                  = local.environment
@@ -90,12 +90,12 @@ module "app_service_plan" {
 
 # function app
 module "functions" {
-  source = "../../modules/function_app"
+  source = "../../modules/windows_function_app"
 
-  always_on           = false
-  app_service_plan_id = module.app_service_plan.id
-  app_settings        = {}
-  application         = local.application
+  always_on         = false
+  app_settings      = {}
+  application       = local.application
+  application_stack = local.function.application_stack
   cors_settings = {
     allowed_origins = [
       "https://functions.azure.com",
@@ -105,10 +105,10 @@ module "functions" {
     support_credentials = false
   }
   environment               = local.environment
-  functions_runtime_version = local.function.runtime_version # TODO: isn't this hard-coded in the module?
   location                  = local.location
   resource_group_name       = module.resource_group.name
   role                      = local.function.role
+  service_plan_id           = module.app_service_plan.id
   storage = {
     alert_settings = []
     vnet_integration = {
@@ -116,12 +116,11 @@ module "functions" {
       enabled     = true
     }
   }
-  tags                      = local.tags
-  tenant                    = local.tenant
-  use_32_bit_worker_process = false
+  tags              = local.tags
+  tenant            = local.tenant
+  use_32_bit_worker = false
   vnet_integration = {
     subnet_id              = module.app_service_subnet.id
     vnet_route_all_enabled = true
   }
-  worker_runtime_type = local.function.runtime_type
 }

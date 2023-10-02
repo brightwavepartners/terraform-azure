@@ -7,9 +7,11 @@ locals {
   application = "private"
   environment = "sbx"
   function = {
+    application_stack = {
+      dotnet_version = "7"
+      use_dotnet_isolated_runtime = false
+    }
     role            = "functionone"
-    runtime_type    = "dotnet"
-    runtime_version = "~4"
   }
   location = "northcentralus"
   tags     = {}
