@@ -122,13 +122,10 @@ resource "azurerm_windows_function_app" "function_app" {
     elastic_instance_minimum = var.minimum_instance_count
     ftps_state               = "FtpsOnly"
 
-    # we are doing the ip_restriction attribute via a for loop instead of dynamic block because
-    # a dynamic block will not construct an empty list to remove all rules if the passed in 
-    # configuration calls for it. in other words, there is no way to use a dynamic block to 
-    # remove all restrictions if there were some left from a previous configuration that we need
-    # removed.
-    ip_restriction = [
-      for ip_restriction in var.ip_restrictions : {
+    dynamic "ip_restriction" {
+      for_each = var.ip_restrictions
+
+      content {
         action                    = ip_restriction.action
         headers                   = [] # TODO: according the documentation, this value should be optional but apparently is not. there is an issue here https://github.com/hashicorp/terraform-provider-azurerm/issues/12367. Need to figure out how to work around the issue without hard-coding.
         ip_address                = ip_restriction.ip_address
@@ -137,7 +134,7 @@ resource "azurerm_windows_function_app" "function_app" {
         service_tag               = ip_restriction.service_tag
         virtual_network_subnet_id = ip_restriction.virtual_network_subnet_id
       }
-    ]
+    }
 
     use_32_bit_worker      = var.use_32_bit_worker
     vnet_route_all_enabled = local.vnet_integrated_function_route_all_enabled
