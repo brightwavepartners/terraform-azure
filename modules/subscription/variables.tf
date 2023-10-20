@@ -30,5 +30,6 @@ variable "environment" {
 
 variable "subscription_count" {
   type        = string
+  default     = null
   description = "This value provides a counter for the number of same subscriptions in order to keep the subscription unique name if there are more than one (e.g. 001)."
 }
