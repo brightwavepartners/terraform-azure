@@ -20,11 +20,11 @@ resource "azurerm_subscription" "subscription" {
   billing_scope_id = data.azurerm_billing_mca_account_scope.billing_account.id
   subscription_name = join(
     "-",
-    [
+    compact([
       var.business_unit,
       var.application,
       module.globals.environment_list[var.environment],
       var.subscription_count
-    ]
+    ])
   )
 }
