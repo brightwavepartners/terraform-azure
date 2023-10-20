@@ -26,22 +26,24 @@ locals {
   # will not work correctly since it depends on the 'environment_name_max_length' when deriving
   # names.
   environment_list = {
-    "development"   = local.environment_short_name_development
-    "dev"           = local.environment_short_name_development
-    "dev_qa_shared" = "dvqa"
-    "dvqa"          = "dvqa"
-    "local"         = local.environment_short_name_local
-    "loc"           = local.environment_short_name_local
-    "qa"            = local.environment_short_name_qa
-    "prd"           = local.environment_short_name_production
-    "production"    = local.environment_short_name_production
-    "prod"          = local.environment_short_name_production
-    "sandbox"       = "sbx"
-    "sbx"           = "sbx"
-    "shared"        = "shar"
-    "temp"          = "tmp"
-    "tmp"           = "tmp"
-    "uat"           = local.environment_short_name_uat
+    "development"       = local.environment_short_name_development
+    "dev"               = local.environment_short_name_development
+    "dev_qa_shared"     = "dvqa"
+    "dvqa"              = "dvqa"
+    "local"             = local.environment_short_name_local
+    "loc"               = local.environment_short_name_local
+    "qa"                = local.environment_short_name_qa
+    "prd"               = local.environment_short_name_production
+    "production"        = local.environment_short_name_production
+    "prod"              = local.environment_short_name_production
+    "rc"                = "rc"
+    "release_candidate" = "rc"
+    "sandbox"           = "sbx"
+    "sbx"               = "sbx"
+    "shared"            = "shar"
+    "temp"              = "tmp"
+    "tmp"               = "tmp"
+    "uat"               = local.environment_short_name_uat
   }
 
   # some resources in azure have length restrictions on their name. for those resources with
