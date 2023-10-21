@@ -48,11 +48,6 @@ variable "always_on" {
   description = "Should the Function App stay loaded all the time?"
 }
 
-variable "app_service_plan_id" {
-  type        = string
-  description = "The unique identifier for the App Service Plan to which the Function App will be attached."
-}
-
 variable "app_settings" {
   type        = map(string)
   default     = {}
@@ -62,6 +57,16 @@ variable "app_settings" {
 variable "application" {
   type        = string
   description = "The name of the application that this infrastructure is being provisioned for."
+}
+
+variable "application_stack" {
+  type = object(
+    {
+      dotnet_version              = optional(string)
+      use_dotnet_isolated_runtime = optional(bool)
+    }
+  )
+  description = "Defines the application stack that the function app will run on."
 }
 
 variable "environment" {
@@ -143,33 +148,24 @@ variable "diagnostics_settings" {
   description = "Defines the configuration for diagnostics settings on the Function App"
 }
 
-variable "dotnet_framework_version" {
-  type        = string
-  default     = "v4.0"
-  description = "The version of the .net framework's CLR used in this Function App."
-}
-
-variable "functions_runtime_version" {
-  type        = string
-  description = "The version of the Functions runtime that hosts your function app (https://docs.microsoft.com/en-us/azure/azure-functions/functions-app-settings#functions_extension_version)."
-}
-
 variable "ip_restrictions" {
   type = list(
     object(
       {
         action      = optional(string)
         description = string
-        headers = optional(list(
-          object(
-            {
-              front_door_ids          = list(string)
-              front_door_health_probe = list(string)
-              forwarded_for           = list(string)
-              forwarded_host          = list(string)
-            }
+        headers = optional(
+          list(
+            object(
+              {
+                front_door_ids          = list(string)
+                front_door_health_probe = list(string)
+                forwarded_for           = list(string)
+                forwarded_host          = list(string)
+              }
+            )
           )
-        ))
+        )
         ip_address                = optional(string)
         name                      = optional(string)
         priority                  = optional(number)
@@ -199,6 +195,12 @@ variable "minimum_instance_count" {
   description = "The minimum number of instances. Only affects apps on the Premium plan."
 }
 
+variable "name" {
+  type        = string
+  default     = null
+  description = "The name given to the function app. Value only required if you want to override the default name that will be provided if this value is null."
+}
+
 variable "resource_group_name" {
   type        = string
   description = "The name of the resource group in which the Function App will be created."
@@ -207,6 +209,11 @@ variable "resource_group_name" {
 variable "role" {
   type        = string
   description = "Defines a role name for the Function App so it can be referred to by this name when attaching to an App Service Plan."
+}
+
+variable "service_plan_id" {
+  type        = string
+  description = "The unique identifier for the App Service Plan to which the Function App will be attached."
 }
 
 variable "storage" {
@@ -271,7 +278,7 @@ variable "tenant" {
   description = "Tenant name."
 }
 
-variable "use_32_bit_worker_process" {
+variable "use_32_bit_worker" {
   type        = bool
   default     = true
   description = "If the Function App should run in 32 bit mode, rather than 64 bit mode."
@@ -286,10 +293,4 @@ variable "vnet_integration" {
   )
   default     = null
   description = "Describes how to apply virtual network integration to the Function App and its components."
-}
-
-
-variable "worker_runtime_type" {
-  type        = string
-  description = "The language worker runtime to load in the function app. This corresponds to the language being used in your application. For example, dotnet. (https://docs.microsoft.com/en-us/azure/azure-functions/functions-app-settings#functions_worker_runtime)"
 }

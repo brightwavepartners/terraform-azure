@@ -92,11 +92,11 @@ variable "application_insights" {
 variable "cors_settings" {
   type = object(
     {
-      allowed_origins     = list(string),
+      allowed_origins     = list(string)
       support_credentials = bool
     }
   )
-  default     = null
+  default      = null
   description = "Defines settings for origins that should be able to make cross-origin calls."
 }
 

@@ -4,7 +4,7 @@ locals {
     role = "apps1"
     sku  = "EP2"
   }
-  application = "private"
+  application = "functionapp"
   environment = "sbx"
   function = {
     application_stack = {
