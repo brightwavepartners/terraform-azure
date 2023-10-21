@@ -14,7 +14,7 @@ locals {
   app_settings = local.vnet_integrated_storage_enabled ? merge(
     local.default_app_settings_plus_variable_app_settings,
     {
-      "${local.function_app_file_share_application_setting_key}" = local.name
+      "${local.function_app_file_share_application_setting_key}"          = local.name
       "${local.function_app_storage_account_vnet_integrated_setting_key}" = 1
     }
   ) : local.default_app_settings_plus_variable_app_settings
@@ -32,7 +32,7 @@ locals {
     var.app_settings
   )
 
-  function_app_file_share_application_setting_key = "WEBSITE_CONTENTSHARE"
+  function_app_file_share_application_setting_key          = "WEBSITE_CONTENTSHARE"
   function_app_storage_account_vnet_integrated_setting_key = "WEBSITE_CONTENTOVERVNET"
 
   metric_namespace = "Microsoft.Web/sites"
@@ -132,23 +132,27 @@ resource "azurerm_windows_function_app" "function_app" {
       use_dotnet_isolated_runtime = var.application_stack.use_dotnet_isolated_runtime
     }
 
-    cors {
-      allowed_origins = [
-        for origin in [
-          for origin in var.cors_settings.allowed_origins :
+    dynamic "cors" {
+      for_each = var.cors_settings == null ? [] : [1]
+
+      content {
+        allowed_origins = try([
+          for origin in [
+            for origin in var.cors_settings.allowed_origins :
+            replace(
+              origin,
+              "$${var.environment}",
+              var.environment
+            )
+          ] :
           replace(
             origin,
-            "$${var.environment}",
-            var.environment
+            "$${var.location}",
+            module.globals.location_short_name_list[var.location]
           )
-        ] :
-        replace(
-          origin,
-          "$${var.location}",
-          module.globals.location_short_name_list[var.location]
-        )
-      ]
-      support_credentials = var.cors_settings.support_credentials
+        ], [])
+        support_credentials = var.cors_settings.support_credentials
+      }
     }
 
     elastic_instance_minimum = var.minimum_instance_count

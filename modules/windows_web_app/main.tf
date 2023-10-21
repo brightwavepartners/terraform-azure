@@ -134,23 +134,28 @@ resource "azurerm_windows_web_app" "web_app" {
       current_stack  = var.application_stack.current_stack
       dotnet_version = var.application_stack.dotnet_version
     }
-    cors {
-      allowed_origins = try([
-        for origin in [
-          for origin in var.cors_settings.allowed_origins :
+
+    dynamic "cors" {
+      for_each = var.cors_settings == null ? [] : [1]
+
+      content {
+        allowed_origins = try([
+          for origin in [
+            for origin in var.cors_settings.allowed_origins :
+            replace(
+              origin,
+              "$${var.environment}",
+              var.environment
+            )
+          ] :
           replace(
             origin,
-            "$${var.environment}",
-            var.environment
+            "$${var.location}",
+            module.globals.location_short_name_list[var.location]
           )
-        ] :
-        replace(
-          origin,
-          "$${var.location}",
-          module.globals.location_short_name_list[var.location]
-        )
-      ], [])
-      support_credentials = try(var.cors_settings.support_credentials, false)
+        ], [])
+        support_credentials = try(var.cors_settings.support_credentials, false)
+      }
     }
 
     default_documents = [
