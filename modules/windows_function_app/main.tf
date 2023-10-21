@@ -1,10 +1,7 @@
 # TODO: the discussion below about WEBSITE_CONTENTSHARE applies only to
 # consumption and premium plans. dedicated plans (e.g. P1v2) would not
-# automatically create the WEBSITE_CONTENTSHARE setting. in that case,
-# the data resource below to find the existing value for WEBSITE_CONTENTSHARE
-# will fail because that setting is not required for a dedicated plan.
-# need to fix this to account for that since this code will fail if a
-# dedicated plan is configured for the function app.
+# automatically create the WEBSITE_CONTENTSHARE setting. need to fix this
+# since this code will fail if a dedicated plan is configured for the function app.
 
 locals {
   # this is the final value for the function app settings after combining default
@@ -17,7 +14,8 @@ locals {
   app_settings = local.vnet_integrated_storage_enabled ? merge(
     local.default_app_settings_plus_variable_app_settings,
     {
-      local.function_app_file_share_application_setting_key = local.name
+      "${local.function_app_file_share_application_setting_key}" = local.name
+      "${local.function_app_storage_account_vnet_integrated_setting_key}" = 1
     }
   ) : local.default_app_settings_plus_variable_app_settings
 
@@ -25,7 +23,6 @@ locals {
   default_app_settings = {
     "APPINSIGHTS_INSTRUMENTATIONKEY"        = azurerm_application_insights.application_insights.instrumentation_key
     "APPLICATIONINSIGHTS_CONNECTION_STRING" = "InstrumentationKey=${azurerm_application_insights.application_insights.instrumentation_key};IngestionEndpoint=https://${var.location}-0.in.applicationinsights.azure.com/"
-    "WEBSITE_CONTENTOVERVNET"               = var.storage == null ? 0 : var.storage.vnet_integration.enabled ? 1 : 0
   }
 
   # this is the merging of the default app settings noted above, plus any additional
@@ -36,6 +33,7 @@ locals {
   )
 
   function_app_file_share_application_setting_key = "WEBSITE_CONTENTSHARE"
+  function_app_storage_account_vnet_integrated_setting_key = "WEBSITE_CONTENTOVERVNET"
 
   metric_namespace = "Microsoft.Web/sites"
 
