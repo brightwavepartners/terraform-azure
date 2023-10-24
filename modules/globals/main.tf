@@ -98,6 +98,7 @@ locals {
     "key_vault"               = "kv"
     "log_analytics_workspace" = "law"
     "network_security_group"  = "nsg"
+    "network_watcher"         = "nw"
     "public_ip"               = "pip"
     "redis_cache"             = "rc"
     "rediscache"              = "rc"
