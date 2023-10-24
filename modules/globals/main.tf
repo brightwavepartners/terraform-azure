@@ -68,6 +68,8 @@ locals {
     "cus"            = "cus"
     "eastus"         = "eus"
     "eus"            = "eus"
+    "eastus2"        = "eus2"
+    "eus2"           = "eus2"
     "northcentralus" = "ncus"
     "ncus"           = "ncus"
     "southcentralus" = "scus"
