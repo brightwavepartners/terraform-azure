@@ -12,7 +12,7 @@ module "globals" {
   tenant      = var.tenant
 }
 
-# SubnetGateways do not support network security groups
+# GatewaySubnets do not support network security groups
 # in this case do not create the NSG or the association
 locals {
   isGatewaySubnet = var.name == "GatewaySubnet" ? true : false
@@ -79,7 +79,7 @@ resource "azurerm_subnet" "subnet" {
 # associate the subnet with the network security group
 resource "azurerm_subnet_network_security_group_association" "network_security_group_association" {
   count = isGatewaySubnet ? 0 : 1
-  
+
   subnet_id                 = azurerm_subnet.subnet.id
   network_security_group_id = azurerm_network_security_group.network_security_group.id
 }
