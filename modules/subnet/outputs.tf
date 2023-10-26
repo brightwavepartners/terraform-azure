@@ -11,9 +11,9 @@ output "name" {
 }
 
 output "network_security_group_id" {
-  value = azurerm_network_security_group.network_security_group.id
+  value = azurerm_network_security_group.network_security_group[0].id
 }
 
 output "network_security_group_name" {
-  value = azurerm_network_security_group.network_security_group.name
+  value = azurerm_network_security_group.network_security_group[0].name
 }
