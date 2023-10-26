@@ -98,6 +98,7 @@ locals {
     "failover_group"          = "fog"
     "function_app"            = "af"
     "key_vault"               = "kv"
+    "local_network_gateway"   = "lgw"
     "log_analytics_workspace" = "law"
     "network_security_group"  = "nsg"
     "network_watcher"         = "nw"
@@ -113,8 +114,8 @@ locals {
     "storage_account"         = "sa"
     "subnet"                  = "sn"
     "virtual_network"         = "vn"
-    "virtual_network_gateway" = "vng"
-    "vpn_connection"          = "conn"
+    "virtual_network_gateway" = "vgw"
+    "vpn_connection"          = "con"
   }
 
   # every resource that is created begins with a common "base name". that base name follows the pattern:
@@ -194,6 +195,7 @@ locals {
     "redis_cache"         = "cache"
     "secret_management"   = "secrets"
     "sql_server"          = "sqlsvr"
+    "vnetgateway"         = "vpn"
   }
 
   # some resources in azure have length restrictions on their name. for those resources with
