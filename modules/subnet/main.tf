@@ -12,8 +12,16 @@ module "globals" {
   tenant      = var.tenant
 }
 
+# GatewaySubnets do not support network security groups
+# in this case do not create the NSG or the association
+locals {
+  isGatewaySubnet = var.name == "GatewaySubnet" ? true : false
+}
+
 # network security group
 resource "azurerm_network_security_group" "network_security_group" {
+  count = local.isGatewaySubnet ? 0 : 1
+
   location            = var.location
   name                = "${module.globals.resource_base_name_long}-${lower(var.role)}-${module.globals.object_type_names.network_security_group}"
   resource_group_name = var.resource_group_name
@@ -35,7 +43,7 @@ resource "azurerm_network_security_rule" "network_security_group_rules" {
   destination_port_ranges                    = each.value.destination_port_ranges
   direction                                  = each.value.direction
   name                                       = each.value.name
-  network_security_group_name                = azurerm_network_security_group.network_security_group.name
+  network_security_group_name                = azurerm_network_security_group.network_security_group[0].name
   priority                                   = each.value.priority
   protocol                                   = each.value.protocol
   resource_group_name                        = var.resource_group_name
@@ -70,6 +78,8 @@ resource "azurerm_subnet" "subnet" {
 
 # associate the subnet with the network security group
 resource "azurerm_subnet_network_security_group_association" "network_security_group_association" {
+  count = local.isGatewaySubnet ? 0 : 1
+
   subnet_id                 = azurerm_subnet.subnet.id
-  network_security_group_id = azurerm_network_security_group.network_security_group.id
+  network_security_group_id = azurerm_network_security_group.network_security_group[0].id
 }
