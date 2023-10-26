@@ -43,7 +43,7 @@ resource "azurerm_network_security_rule" "network_security_group_rules" {
   destination_port_ranges                    = each.value.destination_port_ranges
   direction                                  = each.value.direction
   name                                       = each.value.name
-  network_security_group_name                = azurerm_network_security_group.network_security_group.name
+  network_security_group_name                = azurerm_network_security_group.network_security_group[0].name
   priority                                   = each.value.priority
   protocol                                   = each.value.protocol
   resource_group_name                        = var.resource_group_name
@@ -81,5 +81,5 @@ resource "azurerm_subnet_network_security_group_association" "network_security_g
   count = local.isGatewaySubnet ? 0 : 1
 
   subnet_id                 = azurerm_subnet.subnet.id
-  network_security_group_id = azurerm_network_security_group.network_security_group.id
+  network_security_group_id = azurerm_network_security_group.network_security_group[0].id
 }
