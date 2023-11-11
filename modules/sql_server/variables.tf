@@ -140,7 +140,7 @@ variable "subnets" {
     )
   )
   default     = []
-  description = "The list of subnetss"
+  description = "A list of subnets that will be allowed to access the server."
 }
 
 variable "sql_version" {
