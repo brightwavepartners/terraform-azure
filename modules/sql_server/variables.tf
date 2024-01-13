@@ -103,7 +103,7 @@ variable "firewall_rules" {
   description = "A list of IP addresses that will be added to the firewall rules list of the SQL Server to allow connection."
 }
 
-variable "key_vault" {
+variable "key_vault_id" {
   type        = string
   default     = null
   description = "The unique Azure identifier for a key vault that will be used to store an automatically generated admin password for the SQL Server."

@@ -108,14 +108,41 @@ module "resources" {
 module "sql_server_failover_group" {
   source = "../../modules/sql_server_failover_group"
 
-  for_each = {
-    for failover_group in local.configuration.sql_failover_groups : failover_group.primary_server.role => failover_group
-  }  
-  
+  # # for_each = {
+  # #   for failover_group in local.configuration.sql_failover_groups : failover_group.primary_server.role => failover_group
+  # # }  
+
   application = local.application
   environment = local.environment
-  servers = each.value
-  tags = local.tags
+  servers = {
+    primary_server = {
+      administrator_login = "sandboxadmin"
+      databases = [
+        {
+          role = "admin"
+        }
+      ]
+      key_vault_id        = module.key_vault.id
+      location            = "northcentralus"
+      resource_group_name = "gressman-sqlfailover-sbx-ncus"
+      role                = "admin"
+      version             = "12.0"
+    }
+    secondary_server = {
+      administrator_login = "sandboxadmin"
+      databases = [
+        {
+          role = "admin"
+        }
+      ]
+      key_vault_id        = module.key_vault.id
+      location            = "southcentralus"
+      resource_group_name = "gressman-sqlfailover-sbx-scus"
+      role                = "admin"
+      version             = "12.0"
+    }
+  }
+  tags   = local.tags
   tenant = local.tenant
 
   # even though this module has a reference to the key_vault module,

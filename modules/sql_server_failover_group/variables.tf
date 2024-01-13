@@ -8,6 +8,20 @@ variable "environment" {
   description = "The environment for which to provision the infrastructure (e.g. development, production)"
 }
 
+variable "read_write_endpoint_failover_policy" {
+  type = object(
+    {
+      mode = string
+      grace_minutes = optional(number)
+    }
+  )
+  default = {
+    mode = "Automatic"
+    grace_minutes = 90
+  }
+  description = "Defines the failover settings to apply to the read-write server."
+}
+
 variable "key_vault_id" {
   type        = string
   default     = null
@@ -21,12 +35,14 @@ variable "servers" {
         {
           administrator_login    = string
           administrator_password = optional(string)
-          allowed_subnets = list(
-            object(
-              {
-                name = string
-                id   = string
-              }
+          allowed_subnets = optional(
+            list(
+              object(
+                {
+                  name = string
+                  id   = string
+                }
+              )
             )
           )
           azure_ad_administrator = optional(
@@ -82,7 +98,8 @@ variable "servers" {
                   )
                 }
               )
-            )
+            ),
+            []
           )
           firewall_rules = optional(
             list(
@@ -93,21 +110,26 @@ variable "servers" {
                   start_ip_address = string
                 }
               )
-            )
+            ),
+            []
           )
+          key_vault_id        = optional(string)
           location            = string
           name                = optional(string)
           resource_group_name = string
           role                = string
-          sql_version         = string
-          subnets = optional(list(
-            object(
-              {
-                name = string
-                id   = string
-              }
-            )
-          ))
+          version             = string
+          subnets = optional(
+            list(
+              object(
+                {
+                  name = string
+                  id   = string
+                }
+              )
+            ),
+            []
+          )
           version = string
         }
       )
@@ -115,12 +137,14 @@ variable "servers" {
         {
           administrator_login    = string
           administrator_password = optional(string)
-          allowed_subnets = list(
-            object(
-              {
-                name = string
-                id   = string
-              }
+          allowed_subnets = optional(
+            list(
+              object(
+                {
+                  name = string
+                  id   = string
+                }
+              )
             )
           )
           azure_ad_administrator = optional(
@@ -132,11 +156,13 @@ variable "servers" {
             )
           )
           databases = optional(
-            object(
-              {
-                name = optional(string)
-                role = string
-              }
+            list(
+              object(
+                {
+                  name = optional(string)
+                  role = string
+                }
+              )
             )
           )
           elastic_pools = optional(
@@ -174,7 +200,8 @@ variable "servers" {
                   )
                 }
               )
-            )
+            ),
+            []
           )
           firewall_rules = optional(
             list(
@@ -185,21 +212,26 @@ variable "servers" {
                   start_ip_address = string
                 }
               )
-            )
+            ),
+            []
           )
+          key_vault_id        = optional(string)
           location            = string
           name                = optional(string)
           resource_group_name = string
           role                = string
-          sql_version         = string
-          subnets = optional(list(
-            object(
-              {
-                name = string
-                id   = string
-              }
-            )
-          ))
+          version             = string
+          subnets = optional(
+            list(
+              object(
+                {
+                  name = string
+                  id   = string
+                }
+              )
+            ),
+            []
+          )
           version = string
         }
       )

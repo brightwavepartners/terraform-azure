@@ -40,7 +40,7 @@ resource "azurerm_key_vault_secret" "sql_admin_password" {
   count = var.administrator_password == null ? 1 : 0
 
   content_type = "Password for local SQL administrator account on the SQL Server with name ${local.sql_server_name}"
-  key_vault_id = var.key_vault
+  key_vault_id = var.key_vault_id
   name = join(
     "-",
     [
