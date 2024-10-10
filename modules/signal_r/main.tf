@@ -21,9 +21,16 @@ resource "azurerm_signalr_service" "signalr" {
 
   location               = var.location
   messaging_logs_enabled = var.messaging_logs_enabled
-  name                   = "${module.globals.resource_base_name_long}-${module.globals.role_names.notification}-${module.globals.object_type_names.signalr}"
-  resource_group_name    = var.resource_group_name
-  service_mode           = var.service_mode
+  name = join(
+    "-",
+    [
+      module.globals.resource_base_name_long,
+      module.globals.role_names.notification,
+      module.globals.object_type_names.signalr
+    ]
+  )
+  resource_group_name = var.resource_group_name
+  service_mode        = var.service_mode
 
   sku {
     name     = var.sku

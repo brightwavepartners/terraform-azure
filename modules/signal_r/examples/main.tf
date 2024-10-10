@@ -25,8 +25,8 @@ module "signal_r" {
   location               = "northcentralus"
   messaging_logs_enabled = false
   resource_group_name    = module.resource_group.name
-  service_mode           = "Serverless"
-  sku                    = "Standard_S1"
-  tags                   = {}
-  tenant                 = "mytenant"
+  service_mode = "Serverless"
+  sku    = "Standard_S1"
+  tags   = {}
+  tenant = "mytenant"
 }
