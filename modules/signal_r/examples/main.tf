@@ -26,7 +26,7 @@ module "signal_r" {
   messaging_logs_enabled = false
   resource_group_name    = module.resource_group.name
   service_mode = "Serverless"
-  sku    = "Standard_S1"
+  sku    = "Premium_P1"
   tags   = {}
   tenant = "mytenant"
 }
