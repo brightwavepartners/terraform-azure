@@ -1,3 +1,4 @@
+# TODO: only log analytics workspace as a sink for diagnostics is supported. need to add support for others like storage accounts.
 # diagnostics settings
 resource "azurerm_monitor_diagnostic_setting" "diagnostic_setting" {
   for_each = {
@@ -10,17 +11,11 @@ resource "azurerm_monitor_diagnostic_setting" "diagnostic_setting" {
   log_analytics_destination_type = try(each.value.destination.log_analytics_workspace.destination_type, null)
   log_analytics_workspace_id     = try(each.value.destination.log_analytics_workspace.id, null)
 
-  dynamic "log" {
+  dynamic "enabled_log" {
     for_each = each.value.logs
 
     content {
       category = log.value["category"]
-      enabled  = log.value["enabled"]
-
-      retention_policy {
-        days    = log.value["retention"].days
-        enabled = log.value["retention"].enabled
-      }
     }
   }
 
@@ -29,11 +24,6 @@ resource "azurerm_monitor_diagnostic_setting" "diagnostic_setting" {
 
     content {
       category = metric.value["category"]
-
-      retention_policy {
-        days    = metric.value["retention"].days
-        enabled = metric.value["retention"].enabled
-      }
     }
   }
 }

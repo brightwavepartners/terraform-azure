@@ -69,13 +69,6 @@ variable "diagnostics_settings" {
             object(
               {
                 category = string
-                enabled  = bool
-                retention = object(
-                  {
-                    days    = number
-                    enabled = bool
-                  }
-                )
               }
             )
           )
@@ -85,13 +78,6 @@ variable "diagnostics_settings" {
             object(
               {
                 category = string
-                enabled  = bool
-                retention = object(
-                  {
-                    days    = number
-                    enabled = bool
-                  }
-                )
               }
             )
           )

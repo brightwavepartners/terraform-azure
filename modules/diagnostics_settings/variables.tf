@@ -20,13 +20,6 @@ variable "settings" {
             object(
               {
                 category = string
-                enabled  = bool
-                retention = object(
-                  {
-                    days    = number
-                    enabled = bool
-                  }
-                )
               }
             )
           )
@@ -36,13 +29,6 @@ variable "settings" {
             object(
               {
                 category = string
-                enabled  = bool
-                retention = object(
-                  {
-                    days    = number
-                    enabled = bool
-                  }
-                )
               }
             )
           )
