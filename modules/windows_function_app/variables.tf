@@ -255,6 +255,7 @@ variable "storage" {
         window_size = optional(string)
         }
       )),
+      maximum_size = optional(number)
       vnet_integration = object(
         {
           allowed_ips = optional(list(string))

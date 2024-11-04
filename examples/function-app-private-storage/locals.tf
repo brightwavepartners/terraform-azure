@@ -4,12 +4,12 @@ locals {
     role = "apps1"
     sku  = "EP2"
   }
-  application = "private"
+  application = "functionapp"
   environment = "sbx"
   function = {
     application_stack = {
       dotnet_version = "v7.0"
-      use_dotnet_isolated_runtime = false
+      use_dotnet_isolated_runtime = true
     }
     role            = "functionone"
   }
