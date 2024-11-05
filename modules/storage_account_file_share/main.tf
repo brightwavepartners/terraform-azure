@@ -1,3 +1,6 @@
+locals {
+  file_share_retention_policy_command = var.retention_days == 0 ? "az storage account file-service-properties update --resource-group ${var.resource_group_name} --account-name ${var.storage_account_name} --enable-delete-retention false" : "az storage account file-service-properties update --resource-group ${var.resource_group_name} --account-name ${var.storage_account_name} --enable-delete-retention true --delete-retention-days ${var.retention_days}"
+}
 # global naming conventions and resources
 module "globals" {
   source = "../globals"
@@ -17,7 +20,7 @@ resource "azurerm_storage_share" "file_share" {
 resource "null_resource" "file_share_retention_policy" {
   provisioner "local-exec" {
     command = <<EOT
-      az storage account file-service-properties update --resource-group ${var.resource_group_name} --account-name ${var.storage_account_name} --enable-delete-retention ${var.retention_days == 0 ? false : true}
+      az storage account file-service-properties update --resource-group ${var.resource_group_name} --account-name ${var.storage_account_name} --enable-delete-retention false
     EOT
 
     interpreter = ["pwsh", "-Command"]

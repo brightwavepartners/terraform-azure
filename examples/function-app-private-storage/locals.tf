@@ -13,7 +13,7 @@ locals {
     }
     role            = "functionone"
   }
-  location = "northcentralus"
+  location = "eastus2"
   tags     = {}
   tenant   = var.tenant
 }
