@@ -108,7 +108,7 @@ module "function_file_share" {
     var.storage.maximum_size
   )
   resource_group_name  = var.resource_group_name
-  retention_days       = local.file_share_retention_days_default
+  retention_days       = var.storage.vnet_integration.file_share_retention_days == null ? local.file_share_retention_days_default : var.storage.vnet_integration.file_share_retention_days
   role                 = var.role
   storage_account_name = module.storage_account.name
   tenant               = var.tenant

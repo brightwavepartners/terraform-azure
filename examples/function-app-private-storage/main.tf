@@ -114,6 +114,7 @@ module "functions" {
     vnet_integration = {
       allowed_ips = [module.utilities.ip]
       enabled     = true
+      file_share_retention_days = 0
     }
   }
   tags              = local.tags

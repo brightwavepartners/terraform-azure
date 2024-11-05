@@ -258,8 +258,9 @@ variable "storage" {
       maximum_size = optional(number)
       vnet_integration = object(
         {
-          allowed_ips = optional(list(string))
-          enabled     = bool
+          allowed_ips               = optional(list(string))
+          enabled                   = bool
+          file_share_retention_days = optional(number)
         }
       )
     }
