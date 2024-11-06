@@ -104,16 +104,17 @@ module "functions" {
     ],
     support_credentials = false
   }
-  environment               = local.environment
-  location                  = local.location
-  resource_group_name       = module.resource_group.name
-  role                      = local.function.role
-  service_plan_id           = module.app_service_plan.id
+  environment         = local.environment
+  location            = local.location
+  resource_group_name = module.resource_group.name
+  role                = local.function.role
+  service_plan_id     = module.app_service_plan.id
   storage = {
     alert_settings = []
     vnet_integration = {
-      allowed_ips = [module.utilities.ip]
-      enabled     = true
+      allowed_ips               = [module.utilities.ip]
+      enabled                   = true
+      file_share_retention_days = 0
     }
   }
   tags              = local.tags

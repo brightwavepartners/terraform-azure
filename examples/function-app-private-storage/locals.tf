@@ -4,16 +4,16 @@ locals {
     role = "apps1"
     sku  = "EP2"
   }
-  application = "private"
+  application = "functionapp"
   environment = "sbx"
   function = {
     application_stack = {
-      dotnet_version = "v7.0"
-      use_dotnet_isolated_runtime = false
+      dotnet_version              = "v8.0"
+      use_dotnet_isolated_runtime = true
     }
-    role            = "functionone"
+    role = "functionone"
   }
-  location = "northcentralus"
+  location = "eastus2"
   tags     = {}
   tenant   = var.tenant
 }

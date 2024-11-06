@@ -12,25 +12,18 @@ locals {
   # the storage account file share name will be automatically set by the azurerm provider
   # when the function app is provisioned.
   app_settings = local.vnet_integrated_storage_enabled ? merge(
-    local.default_app_settings_plus_variable_app_settings,
+    var.app_settings,
     {
       "${local.function_app_file_share_application_setting_key}"          = local.name
       "${local.function_app_storage_account_vnet_integrated_setting_key}" = 1
     }
-  ) : local.default_app_settings_plus_variable_app_settings
+  ) : var.app_settings
 
-  # default app settings are those that are always the same for every function app created
-  default_app_settings = {
-    "APPINSIGHTS_INSTRUMENTATIONKEY"        = azurerm_application_insights.application_insights.instrumentation_key
-    "APPLICATIONINSIGHTS_CONNECTION_STRING" = "InstrumentationKey=${azurerm_application_insights.application_insights.instrumentation_key};IngestionEndpoint=https://${var.location}-0.in.applicationinsights.azure.com/"
-  }
+  # if the maximum size of the file share is not specified, this is the default value in gigabytes
+  file_share_maximum_size_default = 50
 
-  # this is the merging of the default app settings noted above, plus any additional
-  # app settings that the user has passed in to the module
-  default_app_settings_plus_variable_app_settings = merge(
-    local.default_app_settings,
-    var.app_settings
-  )
+  # if the number of days to retain a soft deleted file share is not specified, this is the default value
+  file_share_retention_days_default = 7
 
   function_app_file_share_application_setting_key          = "WEBSITE_CONTENTSHARE"
   function_app_storage_account_vnet_integrated_setting_key = "WEBSITE_CONTENTOVERVNET"
@@ -100,12 +93,29 @@ module "storage_account" {
 
 # storage account file share for function app application files
 # -- only need this if storage account is vnet integrated
-resource "azurerm_storage_share" "application_files_storage_share" {
+module "function_file_share" {
+  source = "../storage_account_file_share"
+
   count = local.vnet_integrated_storage_enabled ? 1 : 0
 
-  name                 = local.name
+  application     = var.application
+  environment     = var.environment
+  file_share_name = local.name
+  location        = var.location
+  maximum_size = (
+    var.storage.maximum_size == null ?
+    local.file_share_maximum_size_default :
+    var.storage.maximum_size
+  )
+  resource_group_name  = var.resource_group_name
+  retention_days       = var.storage.vnet_integration.file_share_retention_days == null ? local.file_share_retention_days_default : var.storage.vnet_integration.file_share_retention_days
+  role                 = var.role
   storage_account_name = module.storage_account.name
-  quota                = 50
+  tenant               = var.tenant
+
+  depends_on = [
+    module.storage_account
+  ]
 }
 
 # azure function
@@ -119,13 +129,15 @@ resource "azurerm_windows_function_app" "function_app" {
   storage_account_access_key = module.storage_account.primary_access_key
   storage_account_name       = module.storage_account.name
   tags                       = var.tags
+  virtual_network_subnet_id  = local.vnet_integrated_function_subnet_id
 
   identity {
     type = "SystemAssigned"
   }
 
   site_config {
-    always_on = var.always_on
+    always_on                              = var.always_on
+    application_insights_connection_string = "InstrumentationKey=${azurerm_application_insights.application_insights.instrumentation_key};IngestionEndpoint=https://${var.location}-0.in.applicationinsights.azure.com/"
 
     application_stack {
       dotnet_version              = var.application_stack.dotnet_version
@@ -174,19 +186,6 @@ resource "azurerm_windows_function_app" "function_app" {
 
     use_32_bit_worker      = var.use_32_bit_worker
     vnet_route_all_enabled = local.vnet_integrated_function_route_all_enabled
-  }
-}
-
-# vnet integration for function app
-# -- only need this if function app is vnet integrated
-resource "azurerm_app_service_virtual_network_swift_connection" "vnet_integration" {
-  count = var.vnet_integration != null ? 1 : 0
-
-  app_service_id = azurerm_windows_function_app.function_app.id
-  subnet_id      = local.vnet_integrated_function_subnet_id
-
-  timeouts {
-    create = "1h"
   }
 }
 

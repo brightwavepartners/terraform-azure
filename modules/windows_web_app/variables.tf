@@ -96,7 +96,7 @@ variable "cors_settings" {
       support_credentials = bool
     }
   )
-  default      = null
+  default     = null
   description = "Defines settings for origins that should be able to make cross-origin calls."
 }
 
