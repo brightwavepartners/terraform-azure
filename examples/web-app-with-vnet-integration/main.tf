@@ -21,6 +21,6 @@ module "regions" {
   }
 
   virtual_network_address_space = each.value.virtual_network.address_space
-  configuration = local.configuration
-  location      = each.value.location
+  configuration                 = local.configuration
+  location                      = each.value.location
 }

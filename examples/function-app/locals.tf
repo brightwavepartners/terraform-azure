@@ -8,10 +8,10 @@ locals {
   environment = "sbx"
   function = {
     application_stack = {
-      dotnet_version = "v7.0"
+      dotnet_version              = "v7.0"
       use_dotnet_isolated_runtime = true
     }
-    role            = "functionone"
+    role = "functionone"
   }
   location = "northcentralus"
   tags     = {}

@@ -19,18 +19,18 @@ variable "location" {
 }
 
 variable "maximum_size" {
-  type = number
-  default = 50
+  type        = number
+  default     = 50
   description = "The maximum size of the share, in gigabytes."
 }
 
 variable "resource_group_name" {
-  type        = string
+  type = string
 }
 
 variable "retention_days" {
-  type = number
-  default = 7
+  type        = number
+  default     = 7
   description = "Defines how long to retain the file share after deletion (sof-delete)."
 }
 

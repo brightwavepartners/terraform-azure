@@ -146,13 +146,13 @@ variable "role_assignments" {
   type = list(
     object(
       {
-        name = string
+        name      = string
         object_id = string
         role_name = string
       }
     )
   )
-  default = []
+  default     = []
   description = "A list of key-value pairs that describe the desired roles to be added to the service bus in the form of objectid=rolenmae."
 }
 

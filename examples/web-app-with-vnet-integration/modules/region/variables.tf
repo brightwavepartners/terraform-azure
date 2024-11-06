@@ -9,7 +9,7 @@ variable "location" {
 }
 
 variable "virtual_network_address_space" {
-  type = list(string)
+  type        = list(string)
   description = "The address space(s) to provision for the region's virtual network."
 }
 

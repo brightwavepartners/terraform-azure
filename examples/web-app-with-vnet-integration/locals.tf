@@ -2,7 +2,7 @@ locals {
   configuration = {
     apps = [
       {
-        always_on = true
+        always_on                 = true
         role                      = "api"
         service_plan_role         = "apps1"
         use_32_bit_worker_process = false

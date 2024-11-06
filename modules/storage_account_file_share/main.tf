@@ -40,7 +40,7 @@ resource "null_resource" "file_share_retention_policy_disable" {
 
 # if specified retention days is greater than 0, turn on soft-delete and set the number of retention days
 resource "null_resource" "file_share_retention_policy_enable" {
-  count = var.retention_days > 0 ? 1: 0
+  count = var.retention_days > 0 ? 1 : 0
 
   provisioner "local-exec" {
     command = <<EOT
