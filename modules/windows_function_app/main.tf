@@ -14,7 +14,7 @@ locals {
   app_settings = local.vnet_integrated_storage_enabled ? merge(
     var.app_settings,
     {
-      "${local.function_app_file_share_application_setting_key}"          = local.name
+      "${local.function_app_file_share_application_setting_key}" = local.name
       "${local.function_app_storage_account_vnet_integrated_setting_key}" = 1
     }
   ) : var.app_settings
@@ -25,7 +25,7 @@ locals {
   # if the number of days to retain a soft deleted file share is not specified, this is the default value
   file_share_retention_days_default = 7
 
-  function_app_file_share_application_setting_key          = "WEBSITE_CONTENTSHARE"
+  function_app_file_share_application_setting_key = "WEBSITE_CONTENTSHARE"
   function_app_storage_account_vnet_integrated_setting_key = "WEBSITE_CONTENTOVERVNET"
 
   metric_namespace = "Microsoft.Web/sites"
@@ -187,6 +187,27 @@ resource "azurerm_windows_function_app" "function_app" {
     use_32_bit_worker      = var.use_32_bit_worker
     vnet_route_all_enabled = local.vnet_integrated_function_route_all_enabled
   }
+}
+
+# setting the WEBSITE_CONTENTOVERVNET and the WEBSITE_CONTENTSHARE is supposed
+# to be sufficient enough to get the communication working between the function
+# app and the private storage account, but it seems to be inconsistent.
+# sometimes the function app works correctly with just setting those to environment
+# veriables, but sometimes the function app will show an error in the portal and
+# won't startup correctly. adding this setting manually seems to ensure the
+# function app will work with a vnet integrated storage account.
+resource "null_resource" "storage_vnet_content_shared" {
+  count = local.vnet_integrated_storage_enabled ? 1 : 0
+
+  provisioner "local-exec" {
+    command = <<EOT
+      az resource update --resource-group ${var.resource_group_name} --name ${azurerm_windows_function_app.function_app.name}/config/web --resource-type Microsoft.Web/sites/config --set properties.vnetContentShareEnabled=true
+    EOT
+  }
+
+  depends_on = [
+    azurerm_windows_function_app.function_app
+  ]
 }
 
 # diagnostics settings

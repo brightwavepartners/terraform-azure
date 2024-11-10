@@ -74,6 +74,8 @@ locals {
     "ncus"           = "ncus"
     "southcentralus" = "scus"
     "scus"           = "scus"
+    "westus"         = "wus"
+    "wus"            = "wus"
   }
 
   # some resources in azure have length restrictions on their name. for those resources with
