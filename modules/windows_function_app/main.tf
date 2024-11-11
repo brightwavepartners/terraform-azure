@@ -14,7 +14,7 @@ locals {
   app_settings = local.vnet_integrated_storage_enabled ? merge(
     var.app_settings,
     {
-      "${local.function_app_file_share_application_setting_key}" = local.name
+      "${local.function_app_file_share_application_setting_key}"          = local.name
       "${local.function_app_storage_account_vnet_integrated_setting_key}" = 1
     }
   ) : var.app_settings
@@ -25,7 +25,7 @@ locals {
   # if the number of days to retain a soft deleted file share is not specified, this is the default value
   file_share_retention_days_default = 7
 
-  function_app_file_share_application_setting_key = "WEBSITE_CONTENTSHARE"
+  function_app_file_share_application_setting_key          = "WEBSITE_CONTENTSHARE"
   function_app_storage_account_vnet_integrated_setting_key = "WEBSITE_CONTENTOVERVNET"
 
   metric_namespace = "Microsoft.Web/sites"
@@ -262,4 +262,20 @@ module "alerts" {
     tags        = var.tags
     window_size = try(each.value.window_size, null)
   }
+}
+
+# function apps that are backed by a private vnet
+# integrated storage account don't seem to function
+# correctly after they are configured with the storage
+# account until the function app is actually restarted.
+resource "null_resource" "restart_function_app" {
+  count = local.vnet_integrated_storage_enabled ? 1 : 0
+  
+  provisioner "local-exec" {
+    command = "az functionapp restart --name ${azurerm_windows_function_app.function_app.name} --resource-group ${var.resource_group_name}"
+  }
+
+  depends_on = [
+    azurerm_windows_function_app.function_app
+  ]
 }
