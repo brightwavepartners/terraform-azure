@@ -2,6 +2,11 @@
 # consumption and premium plans. dedicated plans (e.g. P1v2) would not
 # automatically create the WEBSITE_CONTENTSHARE setting. need to fix this
 # since this code will fail if a dedicated plan is configured for the function app.
+#
+# IMPORTANT: do not set always_on to true for consumption and premium plans (e.g. not P1v2).
+# doing so will cause the function app to fail due to unnecessary scale out
+# of the plan and generate a number of 503 responses. TODO: add a check for
+# that and fail the provision with a friendly error message indicating the issue.
 
 locals {
   # this is the final value for the function app settings after combining default
@@ -189,27 +194,6 @@ resource "azurerm_windows_function_app" "function_app" {
   }
 }
 
-# setting the WEBSITE_CONTENTOVERVNET and the WEBSITE_CONTENTSHARE is supposed
-# to be sufficient enough to get the communication working between the function
-# app and the private storage account, but it seems to be inconsistent.
-# sometimes the function app works correctly with just setting those to environment
-# veriables, but sometimes the function app will show an error in the portal and
-# won't startup correctly. adding this setting manually seems to ensure the
-# function app will work with a vnet integrated storage account.
-resource "null_resource" "storage_vnet_content_shared" {
-  count = local.vnet_integrated_storage_enabled ? 1 : 0
-
-  provisioner "local-exec" {
-    command = <<EOT
-      az resource update --resource-group ${var.resource_group_name} --name ${azurerm_windows_function_app.function_app.name}/config/web --resource-type Microsoft.Web/sites/config --set properties.vnetContentShareEnabled=true
-    EOT
-  }
-
-  depends_on = [
-    azurerm_windows_function_app.function_app
-  ]
-}
-
 # diagnostics settings
 module "diagnostics_settings" {
   source = "../diagnostics_settings"
@@ -264,18 +248,3 @@ module "alerts" {
   }
 }
 
-# function apps that are backed by a private vnet
-# integrated storage account don't seem to function
-# correctly after they are configured with the storage
-# account until the function app is actually restarted.
-resource "null_resource" "restart_function_app" {
-  count = local.vnet_integrated_storage_enabled ? 1 : 0
-  
-  provisioner "local-exec" {
-    command = "az functionapp restart --name ${azurerm_windows_function_app.function_app.name} --resource-group ${var.resource_group_name}"
-  }
-
-  depends_on = [
-    azurerm_windows_function_app.function_app
-  ]
-}
