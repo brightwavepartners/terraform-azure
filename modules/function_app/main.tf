@@ -30,6 +30,8 @@ locals {
   # if the number of days to retain a soft deleted file share is not specified, this is the default value
   file_share_retention_days_default = 7
 
+  function_app = var.type == "Linux" ? azurerm_linux_function_app.linux_function_app[0] : azurerm_windows_function_app.windows_function_app[0]
+
   function_app_file_share_application_setting_key          = "WEBSITE_CONTENTSHARE"
   function_app_storage_account_vnet_integrated_setting_key = "WEBSITE_CONTENTOVERVNET"
 
@@ -123,8 +125,10 @@ module "function_file_share" {
   ]
 }
 
-# azure function
-resource "azurerm_windows_function_app" "function_app" {
+# linux azure function
+resource "azurerm_linux_function_app" "linux_function_app" {
+  count = var.type == "Linux" ? 1 : 0
+
   app_settings               = local.app_settings
   https_only                 = true
   location                   = var.location
@@ -172,7 +176,80 @@ resource "azurerm_windows_function_app" "function_app" {
       }
     }
 
-    elastic_instance_minimum = var.minimum_instance_count
+    elastic_instance_minimum = var.elastic_instance_minimum
+    ftps_state               = "FtpsOnly"
+
+    dynamic "ip_restriction" {
+      for_each = var.ip_restrictions
+
+      content {
+        action                    = ip_restriction.action
+        headers                   = [] # TODO: according the documentation, this value should be optional but apparently is not. there is an issue here https://github.com/hashicorp/terraform-provider-azurerm/issues/12367. Need to figure out how to work around the issue without hard-coding.
+        ip_address                = ip_restriction.ip_address
+        name                      = ip_restriction.name
+        priority                  = ip_restriction.priority
+        service_tag               = ip_restriction.service_tag
+        virtual_network_subnet_id = ip_restriction.virtual_network_subnet_id
+      }
+    }
+
+    use_32_bit_worker      = var.use_32_bit_worker
+    vnet_route_all_enabled = local.vnet_integrated_function_route_all_enabled
+  }
+}
+
+# windows azure function
+resource "azurerm_windows_function_app" "windows_function_app" {
+  count = var.type == "Windows" ? 1 : 0
+
+  app_settings               = local.app_settings
+  https_only                 = true
+  location                   = var.location
+  name                       = local.name
+  resource_group_name        = var.resource_group_name
+  service_plan_id            = var.service_plan_id
+  storage_account_access_key = module.storage_account.primary_access_key
+  storage_account_name       = module.storage_account.name
+  tags                       = var.tags
+  virtual_network_subnet_id  = local.vnet_integrated_function_subnet_id
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  site_config {
+    always_on                              = var.always_on
+    application_insights_connection_string = "InstrumentationKey=${azurerm_application_insights.application_insights.instrumentation_key};IngestionEndpoint=https://${var.location}-0.in.applicationinsights.azure.com/"
+
+    application_stack {
+      dotnet_version              = var.application_stack.dotnet_version
+      use_dotnet_isolated_runtime = var.application_stack.use_dotnet_isolated_runtime
+    }
+
+    dynamic "cors" {
+      for_each = var.cors_settings == null ? [] : [1]
+
+      content {
+        allowed_origins = try([
+          for origin in [
+            for origin in var.cors_settings.allowed_origins :
+            replace(
+              origin,
+              "$${var.environment}",
+              var.environment
+            )
+          ] :
+          replace(
+            origin,
+            "$${var.location}",
+            module.globals.location_short_name_list[var.location]
+          )
+        ], [])
+        support_credentials = var.cors_settings.support_credentials
+      }
+    }
+
+    elastic_instance_minimum = var.elastic_instance_minimum
     ftps_state               = "FtpsOnly"
 
     dynamic "ip_restriction" {
@@ -199,7 +276,7 @@ module "diagnostics_settings" {
   source = "../diagnostics_settings"
 
   settings           = var.diagnostics_settings
-  target_resource_id = azurerm_windows_function_app.function_app.id
+  target_resource_id = local.function_app.id
 }
 
 # alerts on function app
@@ -227,10 +304,10 @@ module "alerts" {
     )
     enabled             = each.value.enabled
     frequency           = each.value.frequency
-    name                = "${each.value.name} - ${azurerm_windows_function_app.function_app.name}"
+    name                = "${each.value.name} - ${local.function_app.name}"
     resource_group_name = var.resource_group_name
     scopes = [
-      azurerm_windows_function_app.function_app.id
+      local.function_app.id
     ]
     severity = each.value.severity
     static_criteria = try(

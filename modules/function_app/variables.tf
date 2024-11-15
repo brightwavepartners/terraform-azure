@@ -69,6 +69,12 @@ variable "application_stack" {
   description = "Defines the application stack that the function app will run on."
 }
 
+variable "elastic_instance_minimum" {
+  type        = number
+  default     = 1
+  description = "The minimum number of instances. Only affects apps on Elastic Premium plans."
+}
+
 variable "environment" {
   type        = string
   description = "The environment for which to provision the infrastructure (e.g. development, production)"
@@ -189,12 +195,6 @@ variable "location" {
   description = "The Azure region where the function app will be deployed."
 }
 
-variable "minimum_instance_count" {
-  type        = number
-  default     = 1
-  description = "The minimum number of instances. Only affects apps on the Premium plan."
-}
-
 variable "name" {
   type        = string
   default     = null
@@ -278,6 +278,17 @@ variable "tags" {
 variable "tenant" {
   type        = string
   description = "Tenant name."
+}
+
+variable "type" {
+  type        = string
+  default = "Windows"
+  description = "The operating system type for the function app."
+
+  validation {
+    condition     = contains(["Linux", "Windows"], var.type)
+    error_message = "Valid values for var: type are (Linux, Windows)."
+  }   
 }
 
 variable "use_32_bit_worker" {

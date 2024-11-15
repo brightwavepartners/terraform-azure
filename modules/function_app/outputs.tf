@@ -4,17 +4,17 @@ output "application_insights" {
 }
 
 output "name" {
-  value       = azurerm_windows_function_app.function_app.name
+  value       = local.function_app.name
   description = "The name of the Function App."
 }
 
 output "managed_identity" {
-  value       = azurerm_windows_function_app.function_app.identity
+  value       = local.function_app.identity
   description = "The system managed identity associated with the Function App."
 }
 
 output "resource_group_name" {
-  value       = azurerm_windows_function_app.function_app.resource_group_name
+  value       = local.function_app.resource_group_name
   description = "The name of the resource group within which the Function App was provisioned."
 }
 

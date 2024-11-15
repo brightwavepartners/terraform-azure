@@ -39,7 +39,7 @@ module "app_service_plan" {
 
 # function app
 module "functions" {
-  source = "../../modules/windows_function_app"
+  source = "../../modules/function_app"
 
   always_on         = false
   app_settings      = {}
@@ -60,5 +60,6 @@ module "functions" {
   service_plan_id     = module.app_service_plan.id
   tags                = local.tags
   tenant              = local.tenant
+  type                = local.function.type
   use_32_bit_worker   = false
 }
