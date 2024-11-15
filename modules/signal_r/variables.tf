@@ -41,6 +41,32 @@ variable "messaging_logs_enabled" {
   description = "Specifies if tracing information for SignalR hub messages received and sent is turned on."
 }
 
+variable "name" {
+  type        = string
+  default     = null
+  description = "The name to give to the SignalR instance. If no name is provided, a default name will be used based on the global azure naming convention of this library."
+}
+
+variable "replicas" {
+  type = list(
+    object(
+      {
+        location = string
+        name     = optional(string)
+        sku = optional(
+          object(
+            {
+              name     = string
+              capacity = number
+            }
+          )
+        )
+      }
+    )
+  )
+  default = []
+}
+
 variable "resource_group_name" {
   type        = string
   description = "The name of the resource group in infrastructure will be provisioned."
