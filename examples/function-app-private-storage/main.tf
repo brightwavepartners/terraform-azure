@@ -90,7 +90,7 @@ module "app_service_plan" {
 
 # function app
 module "functions" {
-  source = "../../modules/windows_function_app"
+  source = "../../modules/function_app"
 
   always_on         = false
   app_settings      = {}
@@ -119,6 +119,7 @@ module "functions" {
   }
   tags              = local.tags
   tenant            = local.tenant
+  type              = local.function.type
   use_32_bit_worker = false
   vnet_integration = {
     subnet_id              = module.app_service_subnet.id
