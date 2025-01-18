@@ -11,6 +11,10 @@ module "globals" {
   tenant      = var.tenant
 }
 
+# access the configuration of the azurerm provider.
+data "azurerm_client_config" "current" {}
+
+# file share being added to the storage account
 resource "azurerm_storage_share" "file_share" {
   name                 = var.file_share_name
   storage_account_name = var.storage_account_name
@@ -27,6 +31,7 @@ resource "null_resource" "file_share_retention_policy_disable" {
 
   provisioner "local-exec" {
     command = <<EOT
+      az account set --subscription ${data.azurerm_client_config.current.subscription_id}
       az storage account file-service-properties update --resource-group ${var.resource_group_name} --account-name ${var.storage_account_name} --enable-delete-retention false
     EOT
 
@@ -44,6 +49,7 @@ resource "null_resource" "file_share_retention_policy_enable" {
 
   provisioner "local-exec" {
     command = <<EOT
+      az account set --subscription ${data.azurerm_client_config.current.subscription_id}
       az storage account file-service-properties update --resource-group ${var.resource_group_name} --account-name ${var.storage_account_name} --enable-delete-retention true --delete-retention-days ${var.retention_days}
     EOT
 
