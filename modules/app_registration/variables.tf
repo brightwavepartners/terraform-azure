@@ -1,3 +1,5 @@
+# required variables:
+#   name
 variable "api" {
   type = object(
     {

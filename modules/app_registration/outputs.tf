@@ -1,5 +1,5 @@
 output "application_id" {
-  value       = azuread_application.app_registration.application_id
+  value       = azuread_application.app_registration.client_id
   description = "The Active Directory identifier for this App Registration."
 }
 

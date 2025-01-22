@@ -78,7 +78,7 @@ resource "azuread_application" "app_registration" {
 
 # service principal attached to the app registration
 resource "azuread_service_principal" "service_principal" {
-  application_id               = azuread_application.app_registration.application_id
+  client_id                    = azuread_application.app_registration.client_id
   app_role_assignment_required = false
 }
 
@@ -89,9 +89,9 @@ resource "azuread_application_password" "client_secret" {
     client_secret.name => client_secret
   }
 
-  application_object_id = azuread_application.app_registration.id
-  display_name          = each.value.name
-  end_date              = "2099-12-31T23:59:59Z"
+  application_id = azuread_application.app_registration.id
+  display_name   = each.value.name
+  end_date       = "2099-12-31T23:59:59Z"
 }
 
 # push client secret(s) to key vault
@@ -131,7 +131,7 @@ data "azurerm_key_vault_certificate" "existing_keyvault_auth_certificate" {
 resource "azuread_application_certificate" "existing_certificate" {
   for_each = data.azurerm_key_vault_certificate.existing_keyvault_auth_certificate
 
-  application_object_id = azuread_application.app_registration.id
+  application_id = azuread_application.app_registration.id
   encoding              = "hex"
   end_date              = each.value.expires
   start_date            = each.value.not_before
@@ -206,7 +206,7 @@ resource "azurerm_key_vault_certificate" "keyvault_auth_certificate" {
 resource "azuread_application_certificate" "certificate" {
   for_each = azurerm_key_vault_certificate.keyvault_auth_certificate
 
-  application_object_id = azuread_application.app_registration.id
+  application_id = azuread_application.app_registration.id
   encoding              = "hex"
   end_date              = each.value.certificate_attribute[0].expires
   start_date            = each.value.certificate_attribute[0].not_before
